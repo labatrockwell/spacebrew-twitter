@@ -172,18 +172,18 @@ var WebSocketServer = require('ws').Server;
 
 var wssUI = {};
 	wssUI.newId = 0;
-	wssUI.clients = {
-		client: {},
-		query: "",
-		interval: {}
-	};
+	wssUI.clients = {};
 	wssUI.port = 3001;
 	wssUI.conn = new WebSocketServer({port: wssUI.port});
 	wssUI.conn.on('connection', function(conn) {
 		console.log("connected to front end");
 
 		var clientId = wssUI.newId;
-		wssUI.clients[clientId] = { client: conn, query: ""};
+		wssUI.clients[clientId] = {
+                client: conn,
+                query: "",
+                interval: {}
+            };
 		wssUI.newId++;
 
 	    conn.on('message', function(message) {
