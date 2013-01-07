@@ -55,4 +55,3 @@ Features to Add
 * Block late responses when a new query has been submitted
 * Enable app to support multiple environments in preparation for deployment (dev and deployment)
 * Clean-up app and re-architect to make it a general web services app using the temboo api
-
