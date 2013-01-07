@@ -45,11 +45,13 @@ node app.js
 ```
 
 ##4. Play Time
-Open a browser and go to "localhost:3000" to load the app. Then type in a query and hit submit and watch the tweets come up. Please note that the app only loads new tweets every 30 seconds. Also, the webpage is connect to the node server via websockets on port 3001, in case you are using this port for something else you may need to change this in the code. Just update the `wssUI.port` variable in the `app.js` file.
-
+Open a browser and go to [`http://localhost:3000`](http://localhost:3000) to load the app. Then type in a query and hit submit and watch the tweets come up.  
+  
+Please note that the app only loads new tweets every 30 seconds. Also, the webpage is connect to the node server via websockets on port `3001`, in case you are using this port for something else you may need to change this in the code. Just update the `wssUI.port` variable in the `app.js` file.
+  
 Features to Add
 ===============
-* Refactor code to clean it up and make it more stable and able to handle multiple clients better
-* Enable app to support multiple environments in preparation for deployment (dev and deployment)
-* Clean-up app and re-architect to make it a general web services app using the temboo api
+* Refactor code to clean it up and make it more stable and able to handle multiple clients better  
+* Enable app to support multiple environments in preparation for deployment (dev and deployment)  
+* Clean-up app and re-architect to make it a general web services app using the temboo api  
 
