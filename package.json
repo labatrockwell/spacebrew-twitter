@@ -1,0 +1,16 @@
+{
+  "name": "murmuring-beach-1036",
+  "version": "0.0.1",
+  "private": "true",
+  "dependencies": {
+    "express": ">=3.0.0",
+    "jade": "*",
+    "stylus": "*",
+    "nib": "*",
+    "ws": "*",
+  },
+  "engines": {
+    "node": ">=0.8.0",
+    "npm":  ">=1.1.0"
+  }
+}

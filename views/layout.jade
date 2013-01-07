@@ -1,0 +1,23 @@
+!!!5
+html
+  head
+    title #{title} - My Site
+    link(rel='stylesheet', href='/stylesheets/style.css')
+    script
+      var uiPort = !{port} 
+      console.log(uiPort)
+    script(src='/js/jq.1.8.3.js')
+    script(src='/js/front_end.js')
+  body
+    header
+      h1 #{title}
+      h2 #{subTitle}
+    .container
+      .query_form
+        block query_bar
+      .query_results
+        block query_results
+    #templates hidden
+      block query_item
+    footer
+      p Running on node with Express, Jade and Stylus
