@@ -1,4 +1,4 @@
-var uiPort = uiPort | 3001;
+var uiPort = uiPort || 3001;
 
 var sb = {};
 	sb.server = '127.0.0.1';
