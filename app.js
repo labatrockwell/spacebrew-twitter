@@ -4,6 +4,49 @@ var express = require('express')
   , stylus = require('stylus')
   , nib = require('nib')
 
+var model = {}
+    model.httpPort = 3002;
+    model.wsPort = 3001;
+    model.newClientId = 0;
+    model.clients = {};
+
+var sb = {};
+    sb.server = 'ec2-184-72-140-184.compute-1.amazonaws.com';
+
+/**
+ * Loop through each argument that is passed in via the shell when app is launched. Look for
+ *     port and server configuration settings. The forEach method loops through each item in 
+ *     the process.argv object.  
+ * @param  {string} val   Value stored in the current argument 
+ * @param  {[type]} index Index of the current argument
+ * @param  {[type]} array Array containing all additional command line arguments
+ */
+process.argv.forEach(function (val, index, array) {
+    // check if port number was passed as argument
+    // console.log(index + ': ' + val);
+
+    // check if port number was passed as argument
+    var regMatch = val.match(/(\w+)=(\d+)/)
+    if (regMatch) {
+        if (regMatch[1] == "port") {
+            model.httpPort = regMatch[2]   
+            console.log("APP http port number set: " + model.httpPort)
+        }         
+        if (regMatch[1] == "portUI") {
+            model.wsPort = regMatch[2]   
+            console.log("APP UI-websockets port number set: " + model.wsPort)
+        }         
+    }
+
+    // check if spacebrew server address was passed as argument
+    regMatch = val.match(/(\w+)=([\w\-\.]+)/)
+    if (regMatch) {
+        if (regMatch[1] == "server") {
+            sb.server = regMatch[2]   
+            console.log("APP base spacebrew server set to: " + sb.server)
+        }         
+    }
+})
 
 ///////////////////////////////////
 // create application
@@ -13,7 +56,6 @@ function compile(str, path) {
     .set('filename', path)
     .use(nib())
 }
-
 
 ///////////////////////////////////
 // set the view location and template type
@@ -38,10 +80,7 @@ app.use(express.static(__dirname + '/public'))
 var WebSocket = require('ws');
 
 var sb = {};
-    sb.server = 'ec2-184-72-140-184.compute-1.amazonaws.com';
-    sb.name = "twitter_app";
-    sb.desc = "";
-    sb.pubName = 'tweets',
+    sb.pubName = ['user:tweets', 'tweets', 'new_tweets']
     sb.config = {
         "config": {
             "name": sb.name,
@@ -49,8 +88,16 @@ var sb = {};
             "publish": {
                 "messages": [
                     {
-                        "name": sb.pubName,
+                        "name": sb.pubName[0],
                         "type": "string"
+                    },
+                    {
+                        "name": sb.pubName[1],
+                        "type": "string"
+                    },
+                    {
+                        "name": sb.pubName[2],
+                        "type": "boolean"
                     }
                 ]
             },
@@ -60,30 +107,26 @@ var sb = {};
         }
     };
 
+    sb.server = 'ec2-184-72-140-184.compute-1.amazonaws.com';
+    sb.name = "twitter_app";
+    sb.desc = "";
     sb.conn = new WebSocket("ws://"+sb.server+":9000");  
-    
     sb.conn.onopen = function() {
-        console.log("[sb.onopen] connection opened, configuring spacebrew");
+        console.log("[sb.onopen] connection opened, sending client settings to spacebrew");
         sb.conn.send(JSON.stringify(sb.config));
     }
-
-    sb.conn.onmessage = function(e) {
-    }
-
     sb.conn.onclose = function() {
         console.log("[sb.onopen] connection closed");
     }
-
     sb.conn.onerror = function(e) {
         console.log("onerror ", e);    
     }
-    
     // When the "error" event is emitted for the spacebrew connection, this is called
     sb.conn.on("error", function(error) {
         console.log("+++++++ ERROR +++++++");
         console.error(error);
     });
-    
+
     sb.send = function( name, type, value ){
         var message = {
             message:{
@@ -143,7 +186,9 @@ function queryTwitter(searchT, uiClient) {
                         };
                         newTweets.push(newTweet);
                         lastId = tResults.results[i].id;
-                        sb.send(sb.pubName, "string", JSON.stringify(newTweet));
+                        sb.send(sb.pubName[0], "string", JSON.stringify(newTweet));
+                        sb.send(sb.pubName[1], "string", newTweet.text);
+                        sb.send(sb.pubName[2], "boolean", "true");
                         if (uiClient) {
 		                    if (uiClient.send) {
 	                        	uiClient.send(JSON.stringify(newTweet));
@@ -171,20 +216,21 @@ function queryTwitter(searchT, uiClient) {
 var WebSocketServer = require('ws').Server;
 
 var wssUI = {};
-	wssUI.newId = 0;
-	wssUI.clients = {};
-	wssUI.port = 3001;
-	wssUI.conn = new WebSocketServer({port: wssUI.port});
+	wssUI.conn = new WebSocketServer({port: model.wsPort});
 	wssUI.conn.on('connection', function(conn) {
 		console.log("connected to front end");
 
-		var clientId = wssUI.newId;
-		wssUI.clients[clientId] = {
+		var clientId = model.newClientId;
+		model.clients[clientId] = {
                 client: conn,
                 query: "",
-                interval: {}
+                interval: {},
+                sb: {},
+                lastId: 0,
+                results: {}
             };
-		wssUI.newId++;
+
+		model.newClientId++;
 
 	    conn.on('message', function(message) {
 	        console.log('received: %s', message);
@@ -195,14 +241,14 @@ var wssUI = {};
 		    }
 
 	        if (isString(message.query)) {
-	        	wssUI.clients[clientId].query = message.query;
-		        console.log('client id: ' + clientId + " new query: " + wssUI.clients[clientId].query);
-		        queryTwitter(wssUI.clients[clientId].query, conn);
+	        	model.clients[clientId].query = message.query;
+		        console.log('client id: ' + clientId + " new query: " + model.clients[clientId].query);
+		        queryTwitter(model.clients[clientId].query, conn);
 	        }
 	    });
 
 	    conn.on('close', function() {
-	    	delete wssUI.clients[clientId];
+	    	delete model.clients[clientId];
 	    });
 
 	    conn.send('something');
@@ -216,10 +262,10 @@ var isString = function (obj) {
 ///////////////////////////////////
 // make twitter query when necessary 
 setInterval(function(){
-	for ( var i in wssUI.clients ) {
-		if (!(wssUI.clients[i].query === "")) {
-			console.log ("client id: " + i + " query: " + wssUI.clients[i].query);
-			queryTwitter(wssUI.clients[i].query, wssUI.clients[i].client);			
+	for ( var i in model.clients ) {
+		if (!(model.clients[i].query === "")) {
+			console.log ("client id: " + i + " query: " + model.clients[i].query);
+			queryTwitter(model.clients[i].query, model.clients[i].client);			
 		}
 	}
 }, 20000);
@@ -230,10 +276,20 @@ setInterval(function(){
 app.get('/', function (req, res) {
     var urlReq = require('url').parse(req.url, true);
 
-    if (urlReq.query.search) {
-        query = urlReq.query.search;
-        lastId = 0;
-	    console.log("New Twitter Query: " + query);
+    // if (urlReq.query.search) {
+    //     query = urlReq.query.search;
+    //     lastId = 0;
+	   //  console.log("New Twitter Query: " + query);
+    // }
+
+    if (urlReq.query.server) {
+        sb.server = urlReq.query.server
+        console.log("Setting spacebrew server: " + sb.server);        
+    }
+
+    if (urlReq.query.name) {
+        sb.name = urlReq.query.name
+        console.log("Setting spacebrew name: " + sb.name);        
     }
 
 	var testSend = [{tweet:"first tweet", user:"test user"}]
@@ -241,7 +297,7 @@ app.get('/', function (req, res) {
 		{ 
 			title : 'spacebrew twitter',
 			subTitle : 'sending tweets to spacebrew',
-			port: wssUI.port, 
+			port: model.wsPort, 
 			data : JSON.stringify(testSend)
 		}
 	)
@@ -254,4 +310,9 @@ app.get('/test', function (req, res) {
 
 ///////////////////////////////////
 // app will listen to port 
-app.listen(3000)
+try {
+    app.listen(model.httpPort)    
+} catch (e) {
+    console.log("ERROR: Unable to start-up express web server")
+    console.log("       Error message:\n", e)
+}
