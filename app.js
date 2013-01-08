@@ -3,6 +3,8 @@
 var express = require('express')
   , stylus = require('stylus')
   , nib = require('nib')
+  , WebSocketServer = require('ws').Server;
+
 
 var model = {}
     model.httpPort = 3002;
@@ -123,41 +125,15 @@ sbBase.send = function( cName, name, type, value, _sb ){
     else sb.conn.send(JSON.stringify(message));
 };
 
-
-    // sb.server = 'ec2-184-72-140-184.compute-1.amazonaws.com';
-    // sb.name = "twitter_app";
-    // sb.desc = "";
-    // sb.conn = new WebSocket("ws://"+sb.server+":9000");  
-    // sb.conn.onopen = function() {
-    //     console.log("[sb.onopen] connection opened, sending client settings to spacebrew");
-    //     sb.conn.send(JSON.stringify(sb.config));
-    // }
-    // sb.conn.onclose = function() {
-    //     console.log("[sb.onopen] connection closed");
-    // }
-    // sb.conn.onerror = function(e) {
-    //     console.log("onerror ", e);    
-    // }
-    // // When the "error" event is emitted for the spacebrew connection, this is called
-    // sb.conn.on("error", function(error) {
-    //     console.log("+++++++ ERROR +++++++");
-    //     console.error(error);
-    // });
-
 //////////////////////////////
 // Connect to Temboo - create single TembooSession object
 var tauth = require("./temboo_auth").tAuth;
 var tsession = require("temboo/core/temboosession");
 var session = new tsession.TembooSession(tauth.user, tauth.app, tauth.key);
 
-var tResults = {};
-var lastId = 0;
-
 //////////////////////////////
 // Make Twitter Query
-// function queryTwitter(searchT) {
 function queryTwitter(searchT, clientId) {
-// model.clients
 	if (!isString(searchT)) return;
 
     var Twitter = require("temboo/Library/Twitter/Search");
@@ -174,25 +150,23 @@ function queryTwitter(searchT, clientId) {
     console.log("[queryTwitter] query: " + searchT);
 
     var successCallback = function(results) {
-        tResults = JSON.parse(results.get_Response());
-        // console.log( "[queryTwitter] full results: ", tResults );
-        // if (false) {
+        var tResults = JSON.parse(results.get_Response());
+        model.clients[clientId].results = tResults.results;
+
         if (tResults.query) {
-            console.log( "[queryTwitter] results for: " + tResults.query + " (escaped: " + escape(tResults.query)  + ")" );
-            if (tResults.results) {
+            console.log( "[queryTwitter] results for: " + tResults.query );
+            if (model.clients[clientId].results) {
                 var newTweets = [];
-                for(var i = tResults.results.length - 1; i >= 0; i--) {
-                    if (tResults.results[i].id > lastId) {
+                for(var i = model.clients[clientId].results.length - 1; i >= 0; i--) {
+                    if (model.clients[clientId].results[i].id > model.clients[clientId].lastId) {
                         var newTweet = {
-                            user: tResults.results[i].from_user,
-                            text: tResults.results[i].text,
-                            created_at: tResults.results[i].created_at
+                            user: model.clients[clientId].results[i].from_user,
+                            text: model.clients[clientId].results[i].text,
+                            created_at: model.clients[clientId].results[i].created_at
                         };
                         newTweets.push(newTweet);
-                        lastId = tResults.results[i].id;
+                        model.clients[clientId].lastId = model.clients[clientId].results[i].id;
                         if (model.clients[clientId].sb.connected) {
-                            // var object = JSON.stringify(model.clients[clientId].sb.config);
-                            // console.log("[queryTwitter] client name: " + object);
                             sbBase.send(model.clients[clientId].sb.name, sbBase.pubName[0], "string", JSON.stringify(newTweet), model.clients[clientId].sb.conn);
                             sbBase.send(model.clients[clientId].sb.name, sbBase.pubName[1], "string", newTweet.text, model.clients[clientId].sb.conn);
                             sbBase.send(model.clients[clientId].sb.name, sbBase.pubName[2], "boolean", "true", model.clients[clientId].sb.conn);                            
@@ -221,82 +195,82 @@ function queryTwitter(searchT, clientId) {
 
 ///////////////////////////////////
 // create front-end UI server 
-var WebSocketServer = require('ws').Server;
-
 var wssUI = {};
-	wssUI.conn = new WebSocketServer({port: model.wsPort});
-	wssUI.conn.on('connection', function(conn) {
-		console.log("connected to front end");
 
-		var clientId = model.newClientId;
-		model.clients[clientId] = {
-                id: model.newClientId,
-                conn: conn,
-                query: "",
-                interval: {},
-                sb: {},
-                lastId: 0,
-                results: {},
-            };
-        model.newClientId++;
+wssUI.conn = new WebSocketServer({port: model.wsPort});
 
-        model.clients[clientId].sb = {
-            server : sbBase.server,
-            name : sbBase.name,
-            desc : "",
-            conn : {},
-            config: {},
-            connected : false
+wssUI.conn.on('connection', function(conn) {
+	console.log("connected to front end");
+
+	var clientId = model.newClientId;
+	model.clients[clientId] = {
+            id: model.newClientId,
+            conn: conn,
+            query: "",
+            interval: {},
+            sb: {},
+            lastId: 0,
+            results: {},
+        };
+    model.newClientId++;
+
+    model.clients[clientId].sb = {
+        server : sbBase.server,
+        name : sbBase.name,
+        desc : "",
+        conn : {},
+        config: {},
+        connected : false
+    }
+
+    model.clients[clientId].sb.conn = new WebSocket("ws://"+ model.clients[clientId].sb.server +":9000");
+
+    model.clients[clientId].sb.conn.onopen = function() {
+            console.log("[sb.onopen] connection opened, sending client settings to spacebrew \n" + JSON.stringify(model.clients[clientId].sb.config));
+            var newConfig = sbBase.config;
+            newConfig.config.name = model.clients[clientId].sb.name;
+            newConfig.config.server = model.clients[clientId].sb.server;
+            model.clients[clientId].sb.conn.send(JSON.stringify(newConfig));
+            model.clients[clientId].sb.connected = true;
+            model.clients[clientId].sb.config = newConfig;
+    }
+
+    model.clients[clientId].sb.conn.onclose = function() {
+            console.log("[sb.onopen] connection closed");
+    }
+
+    model.clients[clientId].sb.conn.onerror = function(e) {
+            console.log("onerror ", e);    
+    }
+
+    // When the "error" event is emitted for the spacebrew connection, this is called
+    model.clients[clientId].sb.conn.on("error", function(error) {
+            console.log("+++++++ ERROR +++++++");
+            console.error(error);
+    });            
+
+    conn.on('message', function(message) {
+        console.log('received: %s', message);
+    	try {
+	    	message = JSON.parse(message);
+	    } catch (e) {
+	    	console.log("error can't convert message to json");
+	    }
+
+        if (isString(message.query)) {
+            console.log('client id: ' + clientId + " new query: " + model.clients[clientId].query);
+        	model.clients[clientId].query = message.query;
+	        queryTwitter(model.clients[clientId].query, model.clients[clientId].id);
         }
+    });
 
-        model.clients[clientId].sb.conn = new WebSocket("ws://"+ model.clients[clientId].sb.server +":9000");
+    conn.on('close', function() {
+    	delete model.clients[clientId];
+    });
 
-        model.clients[clientId].sb.conn.onopen = function() {
-                console.log("[sb.onopen] connection opened, sending client settings to spacebrew \n" + JSON.stringify(model.clients[clientId].sb.config));
-                var newConfig = sbBase.config;
-                newConfig.config.name = model.clients[clientId].sb.name;
-                newConfig.config.server = model.clients[clientId].sb.server;
-                model.clients[clientId].sb.conn.send(JSON.stringify(newConfig));
-                model.clients[clientId].sb.connected = true;
-                model.clients[clientId].sb.config = newConfig;
-        }
+    conn.send('something');
 
-        model.clients[clientId].sb.conn.onclose = function() {
-                console.log("[sb.onopen] connection closed");
-        }
-
-        model.clients[clientId].sb.conn.onerror = function(e) {
-                console.log("onerror ", e);    
-        }
-
-        // When the "error" event is emitted for the spacebrew connection, this is called
-        model.clients[clientId].sb.conn.on("error", function(error) {
-                console.log("+++++++ ERROR +++++++");
-                console.error(error);
-        });            
-
-	    conn.on('message', function(message) {
-	        console.log('received: %s', message);
-	    	try {
-		    	message = JSON.parse(message);
-		    } catch (e) {
-		    	console.log("error can't convert message to json");
-		    }
-
-	        if (isString(message.query)) {
-                console.log('client id: ' + clientId + " new query: " + model.clients[clientId].query);
-	        	model.clients[clientId].query = message.query;
-		        queryTwitter(model.clients[clientId].query, model.clients[clientId].id);
-	        }
-	    });
-
-	    conn.on('close', function() {
-	    	delete model.clients[clientId];
-	    });
-
-	    conn.send('something');
-
-	});
+});
 
 var isString = function (obj) {
 	return toString.call(obj) == '[object String]';
