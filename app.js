@@ -207,7 +207,7 @@ wssUI.conn.on('connection', function(conn) {
             id: model.newClientId,
             conn: conn,
             query: "",
-            interval: {},
+            interval: getInterval(clientId, 15000),
             sb: {},
             lastId: 0,
             results: {},
@@ -236,7 +236,7 @@ wssUI.conn.on('connection', function(conn) {
     }
 
     model.clients[clientId].sb.conn.onclose = function() {
-            console.log("[sb.onopen] connection closed");
+        console.log("[sb.onopen] connection closed");
     }
 
     model.clients[clientId].sb.conn.onerror = function(e) {
@@ -260,11 +260,13 @@ wssUI.conn.on('connection', function(conn) {
         if (isString(message.query)) {
             console.log('client id: ' + clientId + " new query: " + model.clients[clientId].query);
         	model.clients[clientId].query = message.query;
+            model.clients[clientId].lastId = 0;
 	        queryTwitter(model.clients[clientId].query, model.clients[clientId].id);
         }
     });
 
     conn.on('close', function() {
+        clearInterval(model.clients[clientId].interval);
     	delete model.clients[clientId];
     });
 
@@ -277,16 +279,32 @@ var isString = function (obj) {
 }
 
 
+function getInterval(clientId, timeInterval) {
+    if (timeInterval) timeInterval = isNaN(timeInterval) ? 20000 : timeInterval;
+    else timeInterval =  20000;
+    var newInterval = setInterval(function(){
+        if (model.clients[clientId]) {
+            if (!(model.clients[clientId].query === "")) {
+                console.log ("client id: " + clientId + " query: " + model.clients[clientId].query);
+                queryTwitter(model.clients[clientId].query, model.clients[clientId].id);          
+            }
+        } else {
+            clearInterval(newInterval);
+        }
+    }, timeInterval);
+    return newInterval
+}
+
 ///////////////////////////////////
 // make twitter query when necessary 
-setInterval(function(){
-	for ( var i in model.clients ) {
-		if (!(model.clients[i].query === "")) {
-			console.log ("client id: " + i + " query: " + model.clients[i].query);
-			queryTwitter(model.clients[i].query, model.clients[i].id);			
-		}
-	}
-}, 20000);
+// setInterval(function(){
+// 	for ( var i in model.clients ) {
+// 		if (!(model.clients[i].query === "")) {
+// 			console.log ("client id: " + i + " query: " + model.clients[i].query);
+// 			queryTwitter(model.clients[i].query, model.clients[i].id);			
+// 		}
+// 	}
+// }, 20000);
 
 
 ///////////////////////////////////

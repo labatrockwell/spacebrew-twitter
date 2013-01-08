@@ -127,7 +127,7 @@ header {
   margin: 20px auto;
   overflow: hidden;
 }
-.query_form {
+#query_form {
   float: left;
   width: 700px;
   padding-bottom: 20px;
@@ -135,31 +135,31 @@ header {
   font-size: 12px;
   border-bottom: 1px dotted #ddd;
 }
-.query_results {
+#query_results {
   float: left;
   width: 700px;
   padding-bottom: 20px;
   padding-top: 15px;
   font-family: "Lucida Console", "Monaco", "monospace";
 }
-.query_results h1 {
+#query_results h1 {
   font-size: 14px;
   padding-top: 10px;
   padding-bottom: 10px;
 }
-.query_results .tweet {
+#query_results .tweet {
   padding-top: 10px;
   padding-bottom: 10px;
   font-size: 12px;
   line-height: 1.5;
 }
-.query_results .tweet .user {
+#query_results .tweet .user {
   font-weight: bold;
 }
-.query_results .tweet .text {
+#query_results .tweet .text {
   font-weight: normal;
 }
-.query_results .tweet .time {
+#query_results .tweet .time {
   font-weight: normal;
 }
 p {

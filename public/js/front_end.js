@@ -65,7 +65,7 @@ function setupQuery() {
 			model.query = $("#qText").val();
 			var msg = { query: model.query }; 
 			sb.conn.send(JSON.stringify(msg));
-			$("#qActive").text(model.query);
+			$("#query_results h1").text("Forwarding Tweets With:  " + model.query);
 			model.tweets = [];
 			loadTweets();
 		}
