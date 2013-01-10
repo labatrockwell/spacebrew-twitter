@@ -38,16 +38,24 @@ module.exports = {
 ```
 
 ##3. Run App
-Now you are ready to run the app. Go to app's base directory in the terminal, or other shell, and enter the following command:
+Now you are ready to run the app. Go to app's base directory in the terminal, or other shell, and enter the launch command below with the appropriate arguments.
 
 ```
 node app.js
 ```
-
-##4. Play Time
-Open a browser and go to [`http://localhost:3000`](http://localhost:3000) to load the app. Then type in a query and hit submit and watch the tweets come up.  
   
-Please note that the app only loads new tweets every 30 seconds. Also, the webpage is connect to the node server via websockets on port `3001`, in case you are using this port for something else you may need to change this in the code. Just update the `wssUI.port` variable in the `app.js` file.
+Here is an overview of the parameters that you can pass along to the spacebrew_twitter app on launch:  
+* `port=PORT_NUM` Sets the port number of the http server for this app. Defaults to 3002.  
+* `portUI=SERVER_NAME` Sets the port number of the webscoket server that connects to the front-end/html page. Defaulst to 3001.  
+  
+```
+node app.js port=3009 portUI=3010
+```  
+  
+Here is an example of an app launch command where both parameters are specified.
+  
+##4. Play Time
+Open a browser and go to [`http://localhost:3000?server=server=ec2-184-72-140-184.compute-1.amazonaws.com&name=tweets&`](http://localhost:3000?server=server=ec2-184-72-140-184.compute-1.amazonaws.com&name=tweets&) to load the app. Then type in a query and hit submit and watch the tweets come up. Note that the app only loads new tweets every 20 seconds.  
   
 Features to Add
 ===============
