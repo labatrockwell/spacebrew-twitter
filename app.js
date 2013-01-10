@@ -151,9 +151,9 @@ function queryTwitter(searchT, clientId) {
 
     var successCallback = function(results) {
         var tResults = JSON.parse(results.get_Response());
-        model.clients[clientId].results = tResults.results;
 
         if (tResults.query) {
+            model.clients[clientId].results = tResults.results;
             console.log( "[queryTwitter] results for: " + tResults.query );
             if (model.clients[clientId].results) {
                 var newTweets = [];
