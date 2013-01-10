@@ -14,7 +14,7 @@ To install modules using npm, open up the terminal program and go to the base di
 npm install DEPENDENCY_PKG_NAME
 ```
   
-Packages that can be installed via npm:  
+Here is a list of the packages that can be installed via npm. Just run the command above once for each app, switching out `DEPENDENCY_PKG_NAME` with each app's name:  
 * `express`  
 * `jade`  
 * `nib`  
