@@ -155,48 +155,52 @@ function queryTwitter(searchT, clientId) {
     console.log("[queryTwitter] query: " + searchT);
 
     var successCallback = function(results) {
-        var tResults = JSON.parse(results.get_Response());
+        var tResults = JSON.parse(results.get_Response()),
+            newTweets = [],
+            newTweet = {},
+            vals = "";
 
-        if (tResults.query) {
+        if (tResults.query && tResults.results) {
+            console.log( "[queryTwitter] results received for query: " + tResults.query );
+
             model.clients[clientId].results = tResults.results;
-            console.log( "[queryTwitter] results for: " + tResults.query );
-            if (model.clients[clientId].results) {
-                var newTweets = [];
-                for(var i = model.clients[clientId].results.length - 1; i >= 0; i--) {
-                    if (model.clients[clientId].results[i].id > model.clients[clientId].lastId) {
-                        var newTweet = {
-                            user: model.clients[clientId].results[i].from_user,
-                            text: model.clients[clientId].results[i].text,
-                            created_at: model.clients[clientId].results[i].created_at
-                        };
-                        newTweets.push(newTweet);
+            // if (model.clients[clientId].results) {
+            for(var i = model.clients[clientId].results.length - 1; i >= 0; i--) {
+                if (model.clients[clientId].results[i].id > model.clients[clientId].lastId) {
+                    newTweet = {
+                        user: model.clients[clientId].results[i].from_user,
+                        text: model.clients[clientId].results[i].text,
+                        created_at: model.clients[clientId].results[i].created_at
+                    };
+                    newTweets.push(newTweet);
 
-                        // update the id of the most recent message
-                        model.clients[clientId].lastId = model.clients[clientId].results[i].id;
+                    // update the id of the most recent message
+                    model.clients[clientId].lastId = model.clients[clientId].results[i].id;
 
-                        // if connected to spacebrew, send the new tweets
-                        if (model.clients[clientId].sb_connected) {
-                            var vals = [JSON.stringify(newTweet), newTweet.text, "true"];
-                            for (var i in sbBase.pubs) {
-                                sbBase.send( 
-                                                model.clients[clientId].sb_name, 
-                                                sbBase.pubs[i].name, 
-                                                sbBase.pubs[i].type, 
-                                                vals[i], 
-                                                model.clients[clientId].sb
-                                            );                            
-                            }
-                        }
-
-                        // if connected to 
-                        if (model.clients[clientId].ui) {
-                            model.clients[clientId].ui.send(JSON.stringify(newTweet));
+                    // if connected to spacebrew, send the new tweets
+                    if (model.clients[clientId].sb_connected) {
+                        vals = [JSON.stringify(newTweet), newTweet.text, "true"];
+                        for (var j in sbBase.pubs) {
+                            sbBase.send( 
+                                            model.clients[clientId].sb_name, 
+                                            sbBase.pubs[j].name, 
+                                            sbBase.pubs[j].type, 
+                                            vals[j], 
+                                            model.clients[clientId].sb
+                                        );                            
                         }
                     }
                 }
-                console.log("[queryTwitter] number of new tweets: ", newTweets.length);
-                if (newTweets.length > 0) console.log("[queryTwitter] list of new tweets:\n", newTweets);
             }
+            if (model.clients[clientId].ajax_req) {
+                model.clients[clientId].ajax(JSON.stringify(newTweets));
+            }
+
+            // if connected to 
+            else if (model.clients[clientId].ui_connected) {
+                model.clients[clientId].ui.send(JSON.stringify(newTweets));
+            }            console.log("[queryTwitter] number of new tweets: ", newTweets.length);
+            if (newTweets.length > 0) console.log("[queryTwitter] list of new tweets:\n", newTweets);
         }
     };
 
@@ -317,6 +321,8 @@ function newClient(config) {
         sb_desc: "app the forwards tweets to spacebrew",
         sb_config: {},
         sb_connected: false,
+        ajax: function() {},
+        ajax_req: false
     } 
     return model.clients[clientId];
 }
@@ -364,6 +370,38 @@ app.get('/twitter', function (req, res) {
 	)
 
 })
+
+app.get('/twitter/search', function (req, res) {
+    var urlReq = require('url').parse(req.url, true);
+    var qs = {};
+    var client;
+    console.log("/twitter/search ajax request")
+
+    if (urlReq.query.id) {
+        qs.id = urlReq.query.id;
+        client = model.clients[qs.id];
+    } else {
+        client = newClient({ refresh: 10000000 });
+        qs.id = client.id;
+    }
+
+    if (urlReq.query.query) {
+        qs.query = urlReq.query.query;
+        console.log("From id: " + qs.id + ", new query : " + qs.query);        
+
+        model.clients[qs.id].ajax_req = true;
+        model.clients[qs.id].ajax = function(data) {
+            res.end(data);                
+            model.clients[qs.id].ajax_req = false;
+        }
+
+        queryTwitter(qs.query, qs.id);
+    }
+
+    // res.end("/twitter/search")
+
+})
+
 
 app.get('/test', function (req, res) {
   res.end('Test!')
