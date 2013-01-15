@@ -192,6 +192,7 @@ function queryTwitter(searchT, clientId) {
                     }
                 }
             }
+
             if (model.clients[clientId].ajax_req) {
                 model.clients[clientId].ajax(JSON.stringify(newTweets));
             }
@@ -199,7 +200,9 @@ function queryTwitter(searchT, clientId) {
             // if connected to 
             else if (model.clients[clientId].ui_connected) {
                 model.clients[clientId].ui.send(JSON.stringify(newTweets));
-            }            console.log("[queryTwitter] number of new tweets: ", newTweets.length);
+            }            
+
+            console.log("[queryTwitter] number of new tweets: ", newTweets.length);
             if (newTweets.length > 0) console.log("[queryTwitter] list of new tweets:\n", newTweets);
         }
     };
@@ -376,17 +379,19 @@ app.get('/twitter/search', function (req, res) {
     var qs = {};
     var client;
     console.log("/twitter/search ajax request")
+    console.log("urlReq ", urlReq)
 
-    if (urlReq.query.id) {
-        qs.id = urlReq.query.id;
+    qs = JSON.parse(unescape(urlReq.search.replace(/\?/, "")));
+    console.log("query ", qs)
+
+    if (qs.id && model.clients[qs.id]) {
         client = model.clients[qs.id];
     } else {
         client = newClient({ refresh: 10000000 });
         qs.id = client.id;
     }
 
-    if (urlReq.query.query) {
-        qs.query = urlReq.query.query;
+    if (qs.query) {
         console.log("From id: " + qs.id + ", new query : " + qs.query);        
 
         model.clients[qs.id].ajax_req = true;
@@ -395,7 +400,8 @@ app.get('/twitter/search', function (req, res) {
             model.clients[qs.id].ajax_req = false;
         }
 
-        queryTwitter(qs.query, qs.id);
+        //// ESCAPED HERE
+        queryTwitter(escape(qs.query), qs.id);
     }
 
     // res.end("/twitter/search")

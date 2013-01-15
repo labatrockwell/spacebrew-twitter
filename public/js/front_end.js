@@ -6,46 +6,94 @@ var model = {};
 	model.tweets = [];
 	model.query = "";
 
-/**
- * TweetApp
- */
-
-var tweetServer = new WebSocket("ws://" + model.server + ":" + uiPort);  
-
-tweetServer.onopen = function() {
-	console.log("WebSockets connection opened");
-	var config = {"clientId": clientId};
-	tweetServer.send(JSON.stringify(config));
-}
-
-tweetServer.onmessage = function(data) {
-    console.log("Got WebSockets message: ", data.data);
-    try {
-	    var jData = JSON.parse(data.data);	
-	    console.log("jData: ", jData);
-    	if (jData.user && jData.text && jData.created_at ) {
-    		model.tweets.unshift(jData);
-    		var maxLen = 25;
-    		if (model.tweets.length > maxLen) {
-	    		model.tweets = model.tweets.slice(0,maxLen);    			
+function ajaxReq(query) {
+	$.ajax({
+	    type: "GET",
+	    url: "/twitter/search", 
+		data: JSON.stringify(query),
+	    contentType: "application/json; charset=utf-8",
+	    dataType: "json",
+	    success: function(jData) {
+		    console.log("jData: ", jData);
+		    for (var i = 0; i < jData.length; i++) {
+    	    	if (jData[i].user && jData[i].text && jData[i].created_at ) {
+    	    		model.tweets.unshift(jData[i]);
+    	    		var maxLen = 25;
+    	    		if (model.tweets.length > maxLen) {
+    		    		model.tweets = model.tweets.slice(0,maxLen);    			
+    	    		}
+    	    	}
+    		    for (var j in model.tweets) {
+    			    console.log("user: " + model.tweets[j].user + "\ntext: " + model.tweets[j].text + "\ncreated: " + model.tweets[j].created_at);
+    			}
     		}
-    	}
-	    for (var i in model.tweets) {
-		    console.log("user: " + model.tweets[i].user + "\ntext: " + model.tweets[i].text + "\ncreated: " + model.tweets[i].created_at);
-		}
-    } catch (e) {
-	    console.log("error parsing data as json: " + e);	
-    }
-    app.view.load();
+		    app.view.load();
+
+	    },
+	    error: function(err) {
+	        alert(err.toString());
+	    }
+	});
 }
 
-tweetServer.onclose = function() {
-    console.log("WebSockets connection closed");
+
+
+var Control = {};
+
+Control.main = function (view, model) {
+	var self = this;
+	this.view = view;
+	this.model = model;
+	this.interval = setInterval(function() {
+		self.query();
+	}, 15000);
 }
 
-tweetServer.onerror = function(e) {
-  console.log("onerror ", e);
+Control.main.prototype = {
+	constructor: Control.main,	// link to constructor
+	initialized: false,		// flag that identifies if view has been initialized
+	interval: {},
+
+	query: function () {
+		if (this.model.query === "") return;
+		var query = { "query": this.model.query, "id" : clientId }; 
+		var self = this;
+
+		$.ajax({
+		    type: "GET",
+		    url: "/twitter/search", 
+			data: JSON.stringify(query),
+		    contentType: "application/json; charset=utf-8",
+		    dataType: "json",
+		    context: self,
+
+		    success: function(jData) {
+	    		var maxLen = 25;
+			    for (var i = 0; i < jData.length; i++) {
+	    	    	if (jData[i].user && jData[i].text && jData[i].created_at ) {
+	    	    		self.model.tweets.unshift(jData[i]);
+	    	    		if (self.model.tweets.length > maxLen) {
+	    		    		self.model.tweets = self.model.tweets.slice(0,maxLen);    			
+	    	    		}
+	    	    	}
+	    		}
+			    self.view.load();
+		    },
+		    error: function(err) {
+		        alert(err.toString());
+		    }
+		});
+	},
+
+	newQuery: function (query) {
+		this.model.query = query;
+		this.model.tweets = [];
+	    this.view.load();
+	    this.query();
+	}
+
 }
+
 
 
 /**
@@ -101,8 +149,9 @@ View.main.prototype = {
 
 	submit: function() {
 		model.query = $("#qText").val();
-		var msg = { "query": model.query }; 
-		tweetServer.send(JSON.stringify(msg));
+		var msg = { "query": model.query, "id" : clientId }; 
+
+		ajaxReq(msg);
 		$("#query_results h1").text("Forwarding Tweets With:  " + model.query);
 		model.tweets = [];
 		this.load();
