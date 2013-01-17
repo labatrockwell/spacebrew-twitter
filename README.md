@@ -46,10 +46,10 @@ node app.js
   
 Here is an overview of the parameters that you can pass along to the spacebrew_twitter app on launch:  
 * `port=PORT_NUM` Sets the port number of the http server for this app. Defaults to 3002.  
-* `portUI=SERVER_NAME` Sets the port number of the webscoket server that connects to the front-end/html page. Defaulst to 3001.  
+  
   
 ```
-node app.js port=3009 portUI=3010
+node app.js port=3009 
 ```  
   
 Here is an example of an app launch command where both parameters are specified.
@@ -59,7 +59,4 @@ Open a browser and go to [`http://localhost:3000?server=server=ec2-184-72-140-18
   
 Features to Add
 ===============
-* Refactor code to clean it up and make it more stable and able to handle multiple clients better
-* Block late responses when a new query has been submitted
 * Enable app to support multiple environments in preparation for deployment (dev and deployment)
-* Clean-up app and re-architect to make it a general web services app using the temboo api
