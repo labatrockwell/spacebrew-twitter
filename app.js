@@ -8,12 +8,8 @@ var express = require('express')
 
 var model = {}
     model.httpPort = 3002;
-    model.wsPort = 3001;
     model.curClientId = 0;
     model.clients = {};
-
-var sbBase = {};
-    sbBase.server = 'ec2-184-72-140-184.compute-1.amazonaws.com';
 
 /**
  * Loop through each argument that is passed in via the shell when app is launched. Look for
@@ -31,21 +27,8 @@ process.argv.forEach(function (val, index, array) {
     var regMatch = val.match(/(\w+)=(\d+)/)
     if (regMatch) {
         if (regMatch[1] == "port") {
-            model.httpPort = regMatch[2]   
-            console.log("APP http port number set: " + model.httpPort)
-        }         
-        if (regMatch[1] == "portUI") {
-            model.wsPort = regMatch[2]   
-            console.log("APP UI-websockets port number set: " + model.wsPort)
-        }         
-    }
-
-    // check if spacebrew server address was passed as argument
-    regMatch = val.match(/(\w+)=([\w\-\.]+)/)
-    if (regMatch) {
-        if (regMatch[1] == "server") {
-            sbBase.server = regMatch[2]   
-            console.log("APP base spacebrew server set to: " + sbBase.server)
+            model.httpPort = regMatch[2];   
+            console.log("APP http port number set: " + model.httpPort);
         }         
     }
 })
@@ -53,11 +36,6 @@ process.argv.forEach(function (val, index, array) {
 ///////////////////////////////////
 // create application
 var app = express()
-function compile(str, path) {
-  return stylus(str)
-    .set('filename', path)
-    .use(nib())
-}
 
 ///////////////////////////////////
 // set the view location and template type
@@ -65,70 +43,17 @@ app.set('views', __dirname + '/views')
 app.set('view engine', 'jade')
 app.set('view options', { pretty: true })
 
-
 ///////////////////////////////////
 // set middleware in order
 app.use(express.logger('dev'))
-app.use(stylus.middleware(
-  { src: __dirname + '/public'
-  , compile: compile
-  }
-))
+app.use(stylus.middleware( { src: __dirname + '/public', compile: compileStylus } ))
 app.use(express.static(__dirname + '/public'))
 
+app.get('/', handleRoot);
+app.get('/twitter', handleTwitterApp);
+app.get('/twitter/search', handleTwitterQuery);
+app.get('/twitter/query', handleTwitterQuery);
 
-//////////////////////////////
-// Spacebrew Connection
-var WebSocket = require('ws');
-
-sbBase.name = "space_tweets";
-sbBase.pubName = ['users_and_tweets', 'tweets', 'new_tweets']
-sbBase.pubs = [
-    {name:'users_and_tweets', type: 'string'}, 
-    {name:'tweets', type: 'string'}, 
-    {name:'new_tweets', type: 'boolean'}
-]
-
-sbBase.config = {
-    "config": {
-        "name": "space_tweets",
-        "description": "spacebrew twitter forwarder",
-        "publish": {
-            "messages": [
-                {
-                    "name": sbBase.pubs[0].name,
-                    "type": sbBase.pubs[0].type
-                },
-                {
-                    "name": sbBase.pubs[1].name,
-                    "type": sbBase.pubs[1].type
-                },
-                {
-                    "name": sbBase.pubs[2].name,
-                    "type": sbBase.pubs[2].type
-                }
-            ]
-        },
-        "subscribe": {
-            "messages": []
-        }
-    }
-};
-
-sbBase.send = function( cName, name, type, value, _sb ){
-    var message = {
-        message:{
-           clientName: cName,
-           name:name,
-           type:type,
-           value:value
-        }
-    };
-    console.log("[sbBase.send] sending " + JSON.stringify(message));
-
-    //console.log(message);
-    if (_sb) _sb.send(JSON.stringify(message));
-};
 
 //////////////////////////////
 // Connect to Temboo - create single TembooSession object
@@ -136,24 +61,34 @@ var tauth = require("./temboo_auth").tAuth;
 var tsession = require("temboo/core/temboosession");
 var session = new tsession.TembooSession(tauth.user, tauth.app, tauth.key);
 
-//////////////////////////////
-// Make Twitter Query
-function queryTwitter(searchT, clientId) {
-	if (!isString(searchT)) return;
+/**
+ * queryTwitter Function that submits twitter queries to via the Temboo API engine. 
+ * @param  {Integer} clientId     Id of the client that submitted this query
+ * @param  {String} callbackName Name of callback method that should be called when results data
+ *                               is received. If none is proved then it will default to reply.
+ */
+function queryTwitter(clientId, callbackName) {
+    var searchT = model.clients[clientId].query,
+        callbackName = callbackName || "reply"
 
+	if (!isString(searchT)) return;    // return if search term not valid
+
+    // set-up the temboo service connection
     var Twitter = require("temboo/Library/Twitter/Search");
     var queryChoreo = new Twitter.Query(session);
     
     // Instantiate and populate the input set for the choreo
     var queryInputs = queryChoreo.newInputSet();
+    queryInputs.set_ResponseFormat("json");     // requesting response in json
+    queryInputs.set_Query(searchT);             // setting the search query
 
-    // Set inputs
-    queryInputs.set_ResponseFormat("json");
-    queryInputs.set_Query(searchT);
 
-    console.log("****************************");
-    console.log("[queryTwitter] query: " + searchT);
-
+    /**
+     * successCallback Method that is called by the temboo API when the results from twitter are
+     *     returned. It process the data and calls the client's handler method to forward the
+     *     data back to the front end
+     * @param  {Temboo Results Obect} results Results from Temboo Twitter service query
+     */
     var successCallback = function(results) {
         var tResults = JSON.parse(results.get_Response()),
             newTweets = [],
@@ -164,7 +99,6 @@ function queryTwitter(searchT, clientId) {
             console.log( "[queryTwitter] results received for query: " + tResults.query );
 
             model.clients[clientId].results = tResults.results;
-            // if (model.clients[clientId].results) {
             for(var i = model.clients[clientId].results.length - 1; i >= 0; i--) {
                 if (model.clients[clientId].results[i].id > model.clients[clientId].lastId) {
                     newTweet = {
@@ -176,242 +110,138 @@ function queryTwitter(searchT, clientId) {
 
                     // update the id of the most recent message
                     model.clients[clientId].lastId = model.clients[clientId].results[i].id;
-
-                    // if connected to spacebrew, send the new tweets
-                    if (model.clients[clientId].sb_connected) {
-                        vals = [JSON.stringify(newTweet), newTweet.text, "true"];
-                        for (var j in sbBase.pubs) {
-                            sbBase.send( 
-                                            model.clients[clientId].sb_name, 
-                                            sbBase.pubs[j].name, 
-                                            sbBase.pubs[j].type, 
-                                            vals[j], 
-                                            model.clients[clientId].sb
-                                        );                            
-                        }
-                    }
                 }
             }
 
-            if (model.clients[clientId].ajax_req) {
-                model.clients[clientId].ajax(JSON.stringify(newTweets));
+            if (model.clients[clientId][callbackName]) {
+                model.clients[clientId][callbackName](JSON.stringify(newTweets));
             }
-
-            // if connected to 
-            else if (model.clients[clientId].ui_connected) {
-                model.clients[clientId].ui.send(JSON.stringify(newTweets));
-            }            
 
             console.log("[queryTwitter] number of new tweets: ", newTweets.length);
             if (newTweets.length > 0) console.log("[queryTwitter] list of new tweets:\n", newTweets);
+            if (model.clients[clientId][callbackName]) {
+                model.clients[clientId][callbackName]();
+            }
         }
     };
 
-    // Run the choreo, specifying success and error callback handlers
+    // Run the choreo, passing the success and error callback handlers
     queryChoreo.execute(
         queryInputs,
         successCallback,
-        function(error){console.log(error.type); console.log(error.message);}
+        function(error) {console.log(error.type); console.log(error.message);}
     );
 }
 
+/**
+ * compileStylus Compiles the stylus library to use nib. These are the libraries that handle the stylesheet
+ *     stylus files (ending in .styl)
+ * @param  {unknown} str  TBD
+ * @param  {unknown} path TBD
+ */
+function compileStylus(str, path) {
+  return stylus(str)
+    .set('filename', path)
+    .use(nib())
+}
 
-///////////////////////////////////
-// create front-end UI server 
-var wssUI = {};
+/**
+ * handleRoot Callback function that handles requests to the base URL
+ * @param  {Request Object} req Express server request object, which includes information about the HTTP request
+ * @param  {Response Object} res Express server response object, used to respond to the HTTP request
+ */
+function handleRoot(req, res) {
+  res.write('live services:\n')
+  res.write('\t/twitter')
+  res.end()
+}
 
-wssUI.conn = new WebSocketServer({port: model.wsPort});
+/**
+ * handleTwitterApp Callback function that handles requests for the twitter app. These requests are parsed to
+ *     extract the app name from the URL. Once that is done, a new client object is created and then the appropriate 
+ *     page template is rendered. The client id, page title and subtitle are passed to the front-end page that is 
+ *     being rendered.   
+ * @param  {Request Object} req Express server request object, which includes information about the HTTP request
+ * @param  {Response Object} res Express server response object, used to respond to the HTTP request
+ */
+function handleTwitterApp (req, res) {
+    var client = newClient();
 
-wssUI.conn.on('connection', function(conn) {
-	console.log("connected to front end");
-    var clientId = -1;
+	res.render('index',
+		{ 
+            title : "Tweets in Space"			
+            , subTitle : "forwarding tweets to spacebrew"
+            , clientId: client.id
+		}
+	)
+}
 
-    conn.on('message', function(message) {
-        console.log('received: %s', message);
-    	try { message = JSON.parse(message); } 
-        catch (e) { console.log("error can't convert message to json"); }
+/**
+ * handleTwitterQuery Callback function that handles ajax requests for tweets. The query string in the URL for 
+ *     each request includes a client id and a twitter query term. These are used to make the appropriate request
+ *     to the twitter server, via Temboo. A reply callback method is added to the client object. This method is used
+ *     by the queryTwitter function to respond to the ajax request once it receives a response from the twitter server.
+ *        
+ * @param  {Request Object} req Express server request object, which includes information about the HTTP request
+ * @param  {Response Object} res Express server response object, used to respond to the HTTP request
+ */
+function handleTwitterQuery (req, res) {
+    var urlReq = require('url').parse(req.url, true)    // get the full URL request
+        , query = urlReq.search.replace(/\?/, "")       // get query string from URL request, remove the leading '?'
+        , queryJson = JSON.parse(unescape(query))      // convert string to json (unescape to convert string format first)
+        , client                                       // will hold client object
+        ;
 
-        if (message.clientId) {
-            if (!isNaN(message.clientId)) {
-                clientId = message.clientId;
-                model.clients[clientId].ui = conn;
-                model.clients[clientId].interval = getInterval(clientId);
+    console.log("[handleTwitterQuery] json query ", queryJson)
 
-                var newConfig = sbBase.config;
-                    newConfig.config.name = model.clients[clientId].sb_name;
-                    newConfig.config.server = model.clients[clientId].sb_server;
-                    newConfig.config.description = model.clients[clientId].sb_desc;
+    if (!(queryJson.id && model.clients[queryJson.id])) {
+        client = newClient();
+        queryJson.id = client.id;
+    } 
 
-                model.clients[clientId].sb = new WebSocket("ws://"+ model.clients[clientId].sb_server +":9000");
+    // if the query object featured a valid query then process it
+    if (queryJson.query) {
+        console.log("Valid query from id: " + queryJson.id + ", new query : " + queryJson.query);        
 
-                model.clients[clientId].sb.onopen = function() {
-                    console.log("[sb.onopen] connection opened, sending client settings to spacebrew \n" + JSON.stringify(model.clients[clientId].sb_config));
-                    model.clients[clientId].sb.send(JSON.stringify(newConfig));
-                    model.clients[clientId].sb_connected = true;
-                    model.clients[clientId].sb_config = newConfig;            
-                }
-
-                model.clients[clientId].sb.onclose = function() {
-                    console.log("[sb.onopen] connection closed");
-                }
-
-                model.clients[clientId].sb.onerror = function(e) {
-                    console.log("onerror ", e);    
-                }
-
-                // When the "error" event is emitted for the spacebrew connection, this is called
-                model.clients[clientId].sb.on("error", function(error) {
-                    console.log("+++++++ ERROR +++++++");
-                    console.error(error);
-                });            
-            }
+        // set the ajax_req flag to true and create the callback function
+        model.clients[queryJson.id].query = queryJson.query;
+        model.clients[queryJson.id].reply = function(data) {
+            res.end(data);                
         }
 
-        if (isString(message.query)) {
-            if (clientId >= 0) {
-                model.clients[clientId].query = message.query;
-                model.clients[clientId].lastId = 0;
-                queryTwitter(model.clients[clientId].query, model.clients[clientId].id);
-                console.log('client id: ' + clientId + " new query: " + model.clients[clientId].query);                
-            } 
-        }
-    });
+        // submit the query and client id to the query twitter app
+        queryTwitter(queryJson.id);
+    }
+}
+// })
 
-    conn.on('close', function() {
-        if (model.clients[clientId].sb) model.clients[clientId].sb.close();
-        clearInterval(model.clients[clientId].interval);
-    	delete model.clients[clientId];
-    });
-
-    conn.send('something');
-
-});
-
+/**
+ * isString Function that checks whether an object is a string
+ * @param  {Object}  obj Object that will be checked to confirm whether it is a string
+ * @return {Boolean}     Returns true if the object was a string. False otherwise.
+ */
 var isString = function (obj) {
-	return toString.call(obj) == '[object String]';
+    return toString.call(obj) === '[object String]';
 }
 
-
-function getInterval(clientId) {
-    var newInterval = setInterval(function(){
-        if (model.clients[clientId]) {
-            if (!(model.clients[clientId].query === "")) {
-                console.log ("client id: " + clientId + " query: " + model.clients[clientId].query);
-                queryTwitter(model.clients[clientId].query, model.clients[clientId].id);          
-            }
-        } else {
-            clearInterval(newInterval);
-        }
-    }, model.clients[clientId].interval_time);
-    return newInterval
-}
-
+/**
+ * newClient Increments the curClientId and then add a new client to the model.clients object, assigning
+ *     to it the new client id.
+ * @param  {Object} config  Configuration object with an application name
+ * @return {model.Client}   Returns the client object that was just created
+ */
 function newClient(config) {
     model.curClientId++;
     var clientId = model.curClientId;
     model.clients[clientId] = {
         id: clientId,
         query: "",
-        interval: {},
-        interval_time: config.refresh || 20000,
         results: {},
         lastId: 0,
-        ui: {},
-        ui_connected: false,
-        sb: {},
-        sb_name: config.name || sbBase.name,
-        sb_server: config.server || sbBase.server,
-        sb_desc: "app the forwards tweets to spacebrew",
-        sb_config: {},
-        sb_connected: false,
-        ajax: function() {},
-        ajax_req: false
+        reply: undefined,
     } 
     return model.clients[clientId];
 }
-
-///////////////////////////////////
-// link paths to templates and data
-app.get('/', function (req, res) {
-  res.write('live services:\n')
-  res.write('\t/twitter')
-  res.end()
-})
-
-app.get('/twitter', function (req, res) {
-    var urlReq = require('url').parse(req.url, true);
-    var qs = {};
-    var client;
-
-    if (urlReq.query.server) {
-        qs.server = urlReq.query.server;
-        console.log("Setting spacebrew server: " + qs.server);        
-    }
-
-    if (urlReq.query.name) {
-        qs.name = urlReq.query.name;
-        console.log("Setting spacebrew name: " + qs.name);        
-    }
-
-    if (urlReq.query.refresh) {
-        if (!isNaN(urlReq.query.refresh)) {
-            qs.refresh = urlReq.query.refresh;
-            if (qs.refresh < 4000) qs.refresh = 4000;
-            console.log("Setting refresh time: " + qs.refresh);        
-        }
-    }
-
-    client = newClient(qs);
-
-	res.render('index',
-		{ 
-			title : 'spacebrew twitter'
-			, subTitle : 'sending tweets to spacebrew'
-			, port: model.wsPort
-            , clientId: client.id
-		}
-	)
-
-})
-
-app.get('/twitter/search', function (req, res) {
-    var urlReq = require('url').parse(req.url, true);
-    var qs = {};
-    var client;
-    console.log("/twitter/search ajax request")
-    console.log("urlReq ", urlReq)
-
-    qs = JSON.parse(unescape(urlReq.search.replace(/\?/, "")));
-    console.log("query ", qs)
-
-    if (qs.id && model.clients[qs.id]) {
-        client = model.clients[qs.id];
-    } else {
-        client = newClient({ refresh: 10000000 });
-        qs.id = client.id;
-    }
-
-    if (qs.query) {
-        console.log("From id: " + qs.id + ", new query : " + qs.query);        
-
-        model.clients[qs.id].ajax_req = true;
-        model.clients[qs.id].ajax = function(data) {
-            res.end(data);                
-            model.clients[qs.id].ajax_req = false;
-        }
-
-        //// ESCAPED HERE
-        queryTwitter(escape(qs.query), qs.id);
-    }
-
-    // res.end("/twitter/search")
-
-})
-
-
-app.get('/test', function (req, res) {
-  res.end('Test!')
-})
 
 ///////////////////////////////////
 // app will listen to port 
