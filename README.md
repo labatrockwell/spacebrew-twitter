@@ -44,18 +44,16 @@ Now you are ready to run the app. Go to app's base directory in the terminal, or
 node app.js
 ```
   
-Here is an overview of the parameters that you can pass along to the spacebrew_twitter app on launch:  
-* `port=PORT_NUM` Sets the port number of the http server for this app. Defaults to 3002.  
-  
-  
+When launching the node app you can specify the port number where the front-end web app will be served. To set the port number append the following parameter to the app launch command  `port=PORT_NUM`. Below is an example of an app launch command where the port number is set to 3009. By default the port is set to 3002.
+    
 ```
 node app.js port=3009 
 ```  
-  
-Here is an example of an app launch command where both parameters are specified.
-  
+    
 ##4. Play Time
-Open a browser and go to [`http://localhost:3000?server=server=ec2-184-72-140-184.compute-1.amazonaws.com&name=tweets&`](http://localhost:3000?server=server=ec2-184-72-140-184.compute-1.amazonaws.com&name=tweets&) to load the app. Then type in a query and hit submit and watch the tweets come up. Note that the app only loads new tweets every 20 seconds.  
+Open a browser, navigate to the server at the appropriate port number, and set add the spacebrew server address and app name to the query string, as shown below.
+
+[`http://localhost:3009?server=server=sandbox.spacebrew.cc&name=tweets&`](http://localhost:3009?server=server=ec2-184-72-140-184.compute-1.amazonaws.com&name=tweets&) to load the app. Then type in a query and hit submit and watch the tweets come up. Note that the app only loads new tweets every 20 seconds.  
   
 Features to Add
 ===============
