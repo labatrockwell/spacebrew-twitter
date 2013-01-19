@@ -55,5 +55,4 @@ Open a browser, navigate to the server at the appropriate port number, and set a
 
 [`http://localhost:3009?server=server=sandbox.spacebrew.cc&name=tweets&`](http://localhost:3009?server=server=ec2-184-72-140-184.compute-1.amazonaws.com&name=tweets&) 
   
-When the app is loaded, type in a query and hit submit and watch the tweets come up. Note that the app only loads new tweets every 20 seconds.  
-You can also can change the frequency of refresh by specifying the interval time in milliseconds in the query string, using the key `refresh`.
+When the app is loaded, type in a query and hit submit and watch the tweets come up. Note that the app only loads new tweets every 20 seconds. You can also can change the frequency of refresh by specifying the interval time in milliseconds in the query string, using the key `refresh`.
