@@ -17,6 +17,21 @@ var model = {
 			"connected": "false"
 		},
 		"data": {
+			"user": {
+				"available" : false,
+				"query": "",
+				"geo": {
+					"available": false,
+					"lat": undefined,
+					"long": undefined,
+					"radius": undefined
+				}				
+			},
+			"server": {
+				"tweets": [],
+				"latest": 0
+			},
+
 			"tweets": [],
 			"latest": 0,
 			"query": "",
@@ -26,13 +41,23 @@ var model = {
 				"radius": undefined,
 				"available": false
 			}
+
 		},
 		"controls": {
 			"refresh": ((getQueryString("refresh") || 15000) < 5000) ? (getQueryString("refresh") || 15000) : 5000
 		}
 	};
 
+var app = {};
+	app.view = {};
 
+$(window).bind("load", function() {
+	// setupQuery();
+	// sbConnect();
+	app.view = new View.main();
+	app.control = new Control.main(app.view, model);
+
+});
 
 /**
  * Control namespace for the controller elements of the webservices app
@@ -135,6 +160,8 @@ var Control = {};
 		 */
 		_query: function () {
 			if (this.model.data.query === "") return;
+			if (clientId == -1) return;
+
 			var query = { "query": escape(this.model.data.query)
 						, "id" : clientId 
 						, "geo" : this.model.data.geo } 
@@ -194,7 +221,7 @@ var Control = {};
 			    },
 
 			    error: function(err) {
-			        console(err.toString());
+			        console.log(err);
 			    }
 			});
 		},
@@ -324,7 +351,7 @@ var View = {};
 
 			$("#query_results h2").text(subtitle);
 
-			$("#tweet_container .tweet").remove();        
+			$("#content .tweet").remove();        
 
 			for (var i in model.data.tweets) {
 				$newEle = $("#templates .tweet").clone();
@@ -332,7 +359,7 @@ var View = {};
 				$newEle.find(".user").text(model.data.tweets[i].user);
 				$newEle.find(".text").text(model.data.tweets[i].text);
 				$newEle.find(".created_at").text(model.data.tweets[i].created_at);
-				$newEle.appendTo('#tweet_container');
+				$newEle.appendTo('#content');
 				if (this.debug) console.log("[updateTransformList] created a new list item", $newEle);
 			}	
 		},
@@ -341,7 +368,7 @@ var View = {};
 		 * clear Method that clears the list of tweets in the browser.
 		 */
 		clear: function() {
-			$("#tweet_container .tweet").remove();        
+			$("#content .tweet").remove();        
 		},
 
 		/**

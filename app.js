@@ -1,147 +1,65 @@
-///////////////////////////////////
-// Module dependencies
+// declare all app variables
 var express = require('express')
-  , stylus = require('stylus')
-  , nib = require('nib')
-  , sb = require('./sb')
-  , WebSocketServer = require('ws').Server;
+    , stylus = require('stylus')
+    , nib = require('nib')
+    , appList = ['twitter']
+    , tauth = require("./auth/auth_temboo").tAuth
+    , tsession = require("temboo/core/temboosession")
+    , session = new tsession.TembooSession(tauth.user, tauth.app, tauth.key)
 
+    // root app handlers
+    , rootApp = require('./controllers/root').init(appList)
+    , handleRoot = rootApp.handleRoot.bind(rootApp)
 
-var model = {}
-    model.httpPort = 3002;
-    model.curClientId = 0;
-    model.clients = {};
+    // twitter app handlers
+    , twitterApp = require('./controllers/twitter').init({"session": session})
+    , handleTwitterApp = twitterApp.handleAppRequest.bind(twitterApp)
+    , handleTwitterQuery = twitterApp.handleQueryRequest.bind(twitterApp)
 
-/**
- * Loop through each argument that is passed in via the shell when app is launched. Look for
- *     port and server configuration settings. The forEach method loops through each item in 
- *     the process.argv object.  
- * @param  {string} val   Value stored in the current argument 
- * @param  {[type]} index Index of the current argument
- * @param  {[type]} array Array containing all additional command line arguments
- */
-process.argv.forEach(function (val, index, array) {
-    // check if port number was passed as argument
-    // console.log(index + ': ' + val);
+    // twitter app handlers
+    , fsAuth = require("./auth/auth_foursquare").tAuth
+    , foursquareConfig = { "session": session, "auth": fsAuth }
+    , foursquareApp = require('./controllers/foursquare').init(foursquareConfig)
+    , handleFoursquareApp = foursquareApp.handleAppRequest.bind(foursquareApp)
+    , handleFoursquareAuth = foursquareApp.handleAuthenticationReq.bind(foursquareApp)
+    , handleFoursquareQuery = foursquareApp.handleQueryRequest.bind(foursquareApp)
 
-    // check if port number was passed as argument
-    var regMatch = val.match(/(\w+)=(\d+)/)
-    if (regMatch) {
-        if (regMatch[1] == "port") {
-            model.httpPort = regMatch[2];   
-            console.log("APP http port number set: " + model.httpPort);
-        }         
-    }
-})
+    , model = model || { httpPort: 3002 }
 
-///////////////////////////////////
-// create application
-var app = express()
+    // create application
+    , app = express()       
+    ;   // close 'var' statement
 
-///////////////////////////////////
+// process the arguments passed into app via launch command in terminal
+process.argv.forEach(readArgv); 
+
 // set the view location and template type
-app.set('views', __dirname + '/views')
-app.set('view engine', 'jade')
-app.set('view options', { pretty: true })
+app.set('views', __dirname + '/views')          // set location of view directory
+app.set('view engine', 'jade')                  // set view engine to jade
+app.set('view options', { pretty: true })       // turn on "pretty" output view options for jade
 
-///////////////////////////////////
-// set middleware in order
-app.use(express.logger('dev'))
-app.use(stylus.middleware( { src: __dirname + '/public', compile: compileStylus } ))
-app.use(express.static(__dirname + '/public'))
+// set middleware for processing requests
+app.use(express.logger('dev'))                                                          // log requests when first received
+app.use(stylus.middleware( { src: __dirname + '/public', compile: compileStylus } ))    // set middleware to use stylus
+app.use(express.static(__dirname + '/public'))                                          // serve files in public directory
 
+// set application routes
 app.get('/', handleRoot);
 app.get('/twitter', handleTwitterApp);
 app.get('/twitter/search', handleTwitterQuery);
 app.get('/twitter/query', handleTwitterQuery);
 
+app.get('/foursquare', handleFoursquareApp);
+app.get('/foursquare/auth', handleFoursquareAuth);
+app.get('/foursquare/search', handleFoursquareQuery);
+app.get('/foursquare/query', handleFoursquareQuery);
 
-//////////////////////////////
-// Connect to Temboo - create single TembooSession object
-var tauth = require("./temboo_auth").tAuth;
-var tsession = require("temboo/core/temboosession");
-var session = new tsession.TembooSession(tauth.user, tauth.app, tauth.key);
+app.listen(model.httpPort)    
 
-/**
- * queryTwitter Function that submits twitter queries to via the Temboo API engine. 
- * @param  {Integer} clientId     Id of the client that submitted this query
- * @param  {String} callbackName Name of callback method that should be called when results data
- *                               is received. If none is proved then it will default to reply.
- */
-function queryTwitter(clientId, callbackName) {
-    var searchT = model.clients[clientId].query
-        , geocodeT = model.clients[clientId].geo
-        , geocodeString = undefined
-        , callbackName = callbackName || "reply";
 
-    console.log("[queryTwitter] new request made: ", searchT);
-    console.log("[queryTwitter] geocode: ", geocodeT);
-
-	if (!isString(searchT)) return;    // return if search term not valid
-
-    // set-up the temboo service connection
-    var Twitter = require("temboo/Library/Twitter/Search");
-    var queryChoreo = new Twitter.Query(session);
-    
-    // Instantiate and populate the input set for the choreo
-    var queryInputs = queryChoreo.newInputSet();
-    queryInputs.set_ResponseFormat("json");     // requesting response in json
-    queryInputs.set_Query(searchT);             // setting the search query
-    if (geocodeT.available) {
-        geocodeString = "" + model.clients[clientId].geo.lat 
-                        + "," + model.clients[clientId].geo.long 
-                        + "," + model.clients[clientId].geo.radius + "mi";
-        queryInputs.set_Geocode(geocodeString);             // setting the search query
-        console.log("[queryTwitter] geocode string: ", geocodeString);
-    }
-
-    /**
-     * successCallback Method that is called by the temboo API when the results from twitter are
-     *     returned. It process the data and calls the client's handler method to forward the
-     *     data back to the front end
-     * @param  {Temboo Results Obect} results Results from Temboo Twitter service query
-     */
-    var successCallback = function(results) {
-        var tResults = JSON.parse(results.get_Response()),
-            newTweets = [],
-            newTweet = {},
-            vals = "";
-
-        if (tResults.query && tResults.results) {
-            console.log( "[successCallback] results received for query: " + tResults.query );
-
-            model.clients[clientId].results = tResults.results;
-            for(var i = model.clients[clientId].results.length - 1; i >= 0; i--) {
-                if (model.clients[clientId].results[i].id > model.clients[clientId].lastId) {
-                    newTweet = {
-                        "user": model.clients[clientId].results[i].from_user,
-                        "text": model.clients[clientId].results[i].text,
-                        "created_at": model.clients[clientId].results[i].created_at,
-                        "id": model.clients[clientId].results[i].id
-                    };
-                    newTweets.push(newTweet);
-
-                    // update the id of the most recent message
-                    model.clients[clientId].lastId = model.clients[clientId].results[i].id;
-                }
-            }
-
-            console.log("[queryTwitter] number of new tweets: ", newTweets.length);
-            if (newTweets.length > 0) console.log("[queryTwitter] list of new tweets:\n", newTweets);
-            if (model.clients[clientId][callbackName]) {
-                var reply_obj = {"tweets" : newTweets, "query": model.clients[clientId].query };
-                model.clients[clientId][callbackName](JSON.stringify(reply_obj));
-            }
-        }
-    };
-
-    // Run the choreo, passing the success and error callback handlers
-    queryChoreo.execute(
-        queryInputs,
-        successCallback,
-        function(error) {console.log(error.type); console.log(error.message);}
-    );
-}
+//////////////////
+//////////////////
+// Set-up Methods
 
 /**
  * compileStylus Compiles the stylus library to use nib. These are the libraries that handle the stylesheet
@@ -156,134 +74,22 @@ function compileStylus(str, path) {
 }
 
 /**
- * handleRoot Callback function that handles requests to the base URL
- * @param  {Request Object} req Express server request object, which includes information about the HTTP request
- * @param  {Response Object} res Express server response object, used to respond to the HTTP request
+ * readArgv Function that is called to check each argument that was passed via command along with app launch 
+ *          command. Currently, method only checks for a port identifier.  
+ * @param  {String} val     Value stored in the current argument 
+ * @param  {Integer} index  Index of the current argument
+ * @param  {Array} array    Array containing other command line arguments
  */
-function handleRoot(req, res) {
-  res.write('live services:\n')
-  res.write('\t/twitter')
-  res.end()
-}
+function readArgv(val, index, array) {
+    // check if port number was passed as argument
+    // console.log(index + ': ' + val);
 
-/**
- * handleTwitterApp Callback function that handles requests for the twitter app. These requests are parsed to
- *     extract the app name from the URL. Once that is done, a new client object is created and then the appropriate 
- *     page template is rendered. The client id, page title and subtitle are passed to the front-end page that is 
- *     being rendered.   
- * @param  {Request Object} req Express server request object, which includes information about the HTTP request
- * @param  {Response Object} res Express server response object, used to respond to the HTTP request
- */
-function handleTwitterApp (req, res) {
-    var client = newClient();
-
-	res.render('index',
-		{ 
-            title : "Tweets in Space"			
-            , subTitle : "forwarding tweets to spacebrew"
-            , clientId: client.id
-		}
-	)
-}
-
-/**
- * handleTwitterQuery Callback function that handles ajax requests for tweets. The query string in the URL for 
- *     each request includes a client id and a twitter query term. These are used to make the appropriate request
- *     to the twitter server, via Temboo. A reply callback method is added to the client object. This method is used
- *     by the queryTwitter function to respond to the ajax request once it receives a response from the twitter server.
- *        
- * @param  {Request Object} req Express server request object, which includes information about the HTTP request
- * @param  {Response Object} res Express server response object, used to respond to the HTTP request
- */
-function handleTwitterQuery (req, res) {
-    var urlReq = require('url').parse(req.url, true)    // get the full URL request
-        , query = urlReq.search.replace(/\?/, "")       // get query string from URL request, remove the leading '?'
-        , queryJson = JSON.parse(unescape(query))      // convert string to json (unescape to convert string format first)
-        , client                                       // will hold client object
-        ;
-
-    console.log("[handleTwitterQuery] json query ", queryJson)
-
-    if (!queryJson.id || !model.clients[queryJson.id]) {
-        client = newClient();
-        queryJson.id = client.id;
-    } 
-
-    // if the query object featured a valid query then process it
-    if (queryJson.query) {
-        console.log("Valid query from id: " + queryJson.id + ", query : " + queryJson.query);        
-
-        // if this is a different query
-        if (!(model.clients[queryJson.id].query === queryJson.query)) {
-            console.log("Query is new");        
-            model.clients[queryJson.id].lastId = 0;
-            model.clients[queryJson.id].query = queryJson.query;
-        }
-
-        if (queryJson.geo) {
-            if (queryJson.geo.available == true) {
-                console.log("Geocode included : ", queryJson.geo);        
-                model.clients[queryJson.id].geo.lat = queryJson.geo.lat;
-                model.clients[queryJson.id].geo.long = queryJson.geo.long;
-                model.clients[queryJson.id].geo.radius = queryJson.geo.radius;
-                model.clients[queryJson.id].geo.available = true;                
-            }
-            else {
-                model.clients[queryJson.id].geo.available = false;  
-            }              
-        }
-
-        // set the ajax_req flag to true and create the callback function
-        model.clients[queryJson.id].reply = function(data) {
-            console.log("[model.clients[queryJson.id].reply] callback method: ", data);
-            res.end(data);                
-        }
-
-        // submit the query and client id to the query twitter app
-        queryTwitter(queryJson.id, "reply");
+    // check if port number was passed as argument
+    var regMatch = val.match(/(\w+)=(\d+)/)
+    if (regMatch) {
+        if (regMatch[1] == "port") {
+            model.httpPort = regMatch[2];   
+            console.log("APP http port number set: " + model.httpPort);
+        }         
     }
-}
-// })
-
-/**
- * isString Function that checks whether an object is a string
- * @param  {Object}  obj Object that will be checked to confirm whether it is a string
- * @return {Boolean}     Returns true if the object was a string. False otherwise.
- */
-var isString = function (obj) {
-    return toString.call(obj) === '[object String]';
-}
-
-/**
- * newClient Increments the curClientId and then add a new client to the model.clients object, assigning
- *     to it the new client id.
- * @param  {Object} config  Configuration object with an application name
- * @return {model.Client}   Returns the client object that was just created
- */
-function newClient(config) {
-    model.curClientId++;
-    var clientId = model.curClientId;
-    model.clients[clientId] = {
-        "id": clientId,
-        "query": "",
-        "results": {},
-        "lastId": 0,
-        "reply": undefined,
-        "geo": {
-            "lat": 0,
-            "long": 0,
-            "radius": 0,
-            "available": "false"
-        }
-    } 
-    return model.clients[clientId];
-}
-
-///////////////////////////////////
-// app will listen to port 
-try {
-    app.listen(model.httpPort)    
-} catch (e) {
-    console.log("ERROR: Unable to start-up express web server")
-    console.log("       Error message:\n", e)
 }

@@ -144,7 +144,7 @@ header {
   padding-top: 5px;
   padding-bottom: 5px;
 }
-#query_form .primary {
+#query_form .required {
   margin-bottom: 10px;
 }
 #query_results {
@@ -168,7 +168,7 @@ header {
   padding-top: 0px;
   padding-bottom: 10px;
 }
-#query_results #tweet_container {
+#query_results #content {
   padding-top: 10px;
 }
 #query_results .tweet {

@@ -5,10 +5,10 @@ html
     link(rel='stylesheet', href='/stylesheets/style.css')
     script
       var clientId = !{clientId} 
+    block header_script_pre
     script(src='/js/jq.1.8.3.js')
     script(src='/js/sb.js')
-    script(src='/js/front_end.js')
-    script(src='/js/main.js')
+    block header_script_post
   body
     header
       h1 #{title}
@@ -21,4 +21,4 @@ html
     #templates hidden
       block query_item
     footer
-      p Running on node with Express, Jade and Stylus
+      p Created by LAB at Rockwell Group
