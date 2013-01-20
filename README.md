@@ -55,8 +55,10 @@ node app.js port=3009
 Here is an example of an app launch command where both parameters are specified.
   
 ##4. Play Time
-Open a browser and go to [`http://localhost:3000?server=server=ec2-184-72-140-184.compute-1.amazonaws.com&name=tweets&`](http://localhost:3000?server=server=ec2-184-72-140-184.compute-1.amazonaws.com&name=tweets&) to load the app. Then type in a query and hit submit and watch the tweets come up. Note that the app only loads new tweets every 20 seconds.  
+Open a browser and go to [`http://localhost:3009?server=server=sandbox.spacebrew.cc&name=tweets&`](http://localhost:3009?server=server=ec2-184-72-140-184.compute-1.amazonaws.com&name=tweets&) to load the app. Then type in a query and hit submit and watch the tweets come up. Note that the app only loads new tweets every 20 seconds.  
   
-Features to Add
+Latest Updates
 ===============
-* Enable app to support multiple environments in preparation for deployment (dev and deployment)
+* Fixed bug with spacebrew forwarding features, where messages were being resent.
+* Add geocoding filter to the twitter filter requests
+* Changed layout to work better with additional input fields

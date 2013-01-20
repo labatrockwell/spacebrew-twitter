@@ -1,11 +1,29 @@
 extend layout
 
 block query_bar
-  input#qText(type="text", name="twitter query", value="enter query")  
-  input#qSubmit(type="button", name="submit query", value="Submit") 
+  .primary
+    h1.title Query:<br/>
+    input#qText(type="text", name="twitter query", value="enter query")
+    <br/> 
+    input.qSubmit(type="button", name="submit query", value="Query") 
+ 
+  .optional
+    h1.title Filters:<br/>
+
+  .optional
+    h2.title Geocode:<br/>
+    input#latText(type="text", name="twitter query", value="enter latitude") 
+    <br/> 
+    input#longText(type="text", name="twitter query", value="enter longitude") 
+    <br/> 
+    input#radText(type="text", name="twitter query", value="enter radius") 
+    <br/> 
+    input.qSubmit(type="button", name="submit query", value="Query") 
 
 block query_results
-  h1  
+  .header
+    h1 Enter a search query to start forwarding tweets to Spacebrew.
+    h2 You can also add a geocode filter to your queries.
   #tweet_container
 
 block query_item

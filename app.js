@@ -3,6 +3,7 @@
 var express = require('express')
   , stylus = require('stylus')
   , nib = require('nib')
+  , sb = require('./sb')
   , WebSocketServer = require('ws').Server;
 
 
@@ -68,8 +69,13 @@ var session = new tsession.TembooSession(tauth.user, tauth.app, tauth.key);
  *                               is received. If none is proved then it will default to reply.
  */
 function queryTwitter(clientId, callbackName) {
-    var searchT = model.clients[clientId].query,
-        callbackName = callbackName || "reply"
+    var searchT = model.clients[clientId].query
+        , geocodeT = model.clients[clientId].geo
+        , geocodeString = undefined
+        , callbackName = callbackName || "reply";
+
+    console.log("[queryTwitter] new request made: ", searchT);
+    console.log("[queryTwitter] geocode: ", geocodeT);
 
 	if (!isString(searchT)) return;    // return if search term not valid
 
@@ -81,7 +87,13 @@ function queryTwitter(clientId, callbackName) {
     var queryInputs = queryChoreo.newInputSet();
     queryInputs.set_ResponseFormat("json");     // requesting response in json
     queryInputs.set_Query(searchT);             // setting the search query
-
+    if (geocodeT.available) {
+        geocodeString = "" + model.clients[clientId].geo.lat 
+                        + "," + model.clients[clientId].geo.long 
+                        + "," + model.clients[clientId].geo.radius + "mi";
+        queryInputs.set_Geocode(geocodeString);             // setting the search query
+        console.log("[queryTwitter] geocode string: ", geocodeString);
+    }
 
     /**
      * successCallback Method that is called by the temboo API when the results from twitter are
@@ -96,15 +108,16 @@ function queryTwitter(clientId, callbackName) {
             vals = "";
 
         if (tResults.query && tResults.results) {
-            console.log( "[queryTwitter] results received for query: " + tResults.query );
+            console.log( "[successCallback] results received for query: " + tResults.query );
 
             model.clients[clientId].results = tResults.results;
             for(var i = model.clients[clientId].results.length - 1; i >= 0; i--) {
                 if (model.clients[clientId].results[i].id > model.clients[clientId].lastId) {
                     newTweet = {
-                        user: model.clients[clientId].results[i].from_user,
-                        text: model.clients[clientId].results[i].text,
-                        created_at: model.clients[clientId].results[i].created_at
+                        "user": model.clients[clientId].results[i].from_user,
+                        "text": model.clients[clientId].results[i].text,
+                        "created_at": model.clients[clientId].results[i].created_at,
+                        "id": model.clients[clientId].results[i].id
                     };
                     newTweets.push(newTweet);
 
@@ -113,14 +126,11 @@ function queryTwitter(clientId, callbackName) {
                 }
             }
 
-            if (model.clients[clientId][callbackName]) {
-                model.clients[clientId][callbackName](JSON.stringify(newTweets));
-            }
-
             console.log("[queryTwitter] number of new tweets: ", newTweets.length);
             if (newTweets.length > 0) console.log("[queryTwitter] list of new tweets:\n", newTweets);
             if (model.clients[clientId][callbackName]) {
-                model.clients[clientId][callbackName]();
+                var reply_obj = {"tweets" : newTweets, "query": model.clients[clientId].query };
+                model.clients[clientId][callbackName](JSON.stringify(reply_obj));
             }
         }
     };
@@ -194,23 +204,43 @@ function handleTwitterQuery (req, res) {
 
     console.log("[handleTwitterQuery] json query ", queryJson)
 
-    if (!(queryJson.id && model.clients[queryJson.id])) {
+    if (!queryJson.id || !model.clients[queryJson.id]) {
         client = newClient();
         queryJson.id = client.id;
     } 
 
     // if the query object featured a valid query then process it
     if (queryJson.query) {
-        console.log("Valid query from id: " + queryJson.id + ", new query : " + queryJson.query);        
+        console.log("Valid query from id: " + queryJson.id + ", query : " + queryJson.query);        
+
+        // if this is a different query
+        if (!(model.clients[queryJson.id].query === queryJson.query)) {
+            console.log("Query is new");        
+            model.clients[queryJson.id].lastId = 0;
+            model.clients[queryJson.id].query = queryJson.query;
+        }
+
+        if (queryJson.geo) {
+            if (queryJson.geo.available == true) {
+                console.log("Geocode included : ", queryJson.geo);        
+                model.clients[queryJson.id].geo.lat = queryJson.geo.lat;
+                model.clients[queryJson.id].geo.long = queryJson.geo.long;
+                model.clients[queryJson.id].geo.radius = queryJson.geo.radius;
+                model.clients[queryJson.id].geo.available = true;                
+            }
+            else {
+                model.clients[queryJson.id].geo.available = false;  
+            }              
+        }
 
         // set the ajax_req flag to true and create the callback function
-        model.clients[queryJson.id].query = queryJson.query;
         model.clients[queryJson.id].reply = function(data) {
+            console.log("[model.clients[queryJson.id].reply] callback method: ", data);
             res.end(data);                
         }
 
         // submit the query and client id to the query twitter app
-        queryTwitter(queryJson.id);
+        queryTwitter(queryJson.id, "reply");
     }
 }
 // })
@@ -234,11 +264,17 @@ function newClient(config) {
     model.curClientId++;
     var clientId = model.curClientId;
     model.clients[clientId] = {
-        id: clientId,
-        query: "",
-        results: {},
-        lastId: 0,
-        reply: undefined,
+        "id": clientId,
+        "query": "",
+        "results": {},
+        "lastId": 0,
+        "reply": undefined,
+        "geo": {
+            "lat": 0,
+            "long": 0,
+            "radius": 0,
+            "available": "false"
+        }
     } 
     return model.clients[clientId];
 }

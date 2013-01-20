@@ -123,29 +123,53 @@ header {
   text-shadow: 0px -1px 0px #df1806;
 }
 .container {
-  width: 700px;
+  width: 800px;
   margin: 20px auto;
   overflow: hidden;
 }
 #query_form {
   float: left;
-  width: 700px;
+  width: 180px;
   padding-bottom: 20px;
   font-family: "Lucida Console", "Monaco", "monospace";
   font-size: 12px;
-  border-bottom: 1px dotted #ddd;
+}
+#query_form h1 {
+  font-size: 14px;
+  padding-top: 10px;
+  padding-bottom: 5px;
+}
+#query_form h2 {
+  font-size: 12px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+#query_form .primary {
+  margin-bottom: 10px;
 }
 #query_results {
   float: left;
-  width: 700px;
+  width: 500px;
   padding-bottom: 20px;
-  padding-top: 15px;
   font-family: "Lucida Console", "Monaco", "monospace";
+  padding-right: 10px;
+}
+#query_results .header {
+  padding-bottom: 10px;
+  border-bottom: 1px dotted #000;
 }
 #query_results h1 {
   font-size: 14px;
   padding-top: 10px;
   padding-bottom: 10px;
+}
+#query_results h2 {
+  font-size: 12px;
+  padding-top: 0px;
+  padding-bottom: 10px;
+}
+#query_results #tweet_container {
+  padding-top: 10px;
 }
 #query_results .tweet {
   padding-top: 10px;

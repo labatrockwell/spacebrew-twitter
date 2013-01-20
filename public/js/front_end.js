@@ -18,7 +18,14 @@ var model = {
 		},
 		"data": {
 			"tweets": [],
-			"query": ""
+			"latest": 0,
+			"query": "",
+			"geo": {
+				"lat": undefined,
+				"long": undefined,
+				"radius": undefined,
+				"available": false
+			}
 		},
 		"controls": {
 			"refresh": ((getQueryString("refresh") || 15000) < 5000) ? (getQueryString("refresh") || 15000) : 5000
@@ -128,9 +135,12 @@ var Control = {};
 		 */
 		_query: function () {
 			if (this.model.data.query === "") return;
-			var query = { "query": escape(this.model.data.query), "id" : clientId }; 
-			var self = this;
-			if (true) console.log("[Control:submit] new query: ", query );
+			var query = { "query": escape(this.model.data.query)
+						, "id" : clientId 
+						, "geo" : this.model.data.geo } 
+				, self = this;
+
+			if (true) console.log("[Control:_query] new query: ", query );
 
 			$.ajax({
 			    type: "GET",
@@ -145,12 +155,18 @@ var Control = {};
 						, curTweet = {}
 						, vals = [];
 
+					// if the response is not for the most recent query then don't process it
+					if (jData.query !== self.model.data.query) return;
+
+					console.log("[Controller:_query:success] tweets received ", jData.tweets);
+
 		    		// loop through the new tweet array to add each one to our model 
-				    for (var i = 0; i < jData.length; i++) {
-		    	    	if (jData[i].user && jData[i].text && jData[i].created_at ) {
-		    	    		self.model.data.tweets.unshift(jData[i]);
+				    for (var i = 0; i < jData.tweets.length; i++) {
+		    	    	if (jData.tweets[i].user && jData.tweets[i].text && jData.tweets[i].created_at ) {
+		    	    		self.model.data.tweets.unshift(jData.tweets[i]);
 		    	    	}
 		    		}
+
 		    		// if our model array has grown to large will shrink it back down
     	    		if (self.model.data.tweets.length > maxLen) {
     		    		self.model.data.tweets = self.model.data.tweets.slice(0,maxLen);    			
@@ -162,13 +178,17 @@ var Control = {};
 				    // is spacebrew is connected then send each tweet separately to spacebrew
 					if (self.sb._isConnected) {
 						for (var i = 0; i < self.model.data.tweets.length; i++) {
-							curTweet = self.model.data.tweets[i];						// load current tweet
-							vals = [JSON.stringify(curTweet), curTweet.text, "true"];	// set the values for each publication feed
+							// if this is a tweet that has not been sent yet, then send it
+							if (model.data.tweets[i].id > model.data.latest) {
+								model.data.latest = model.data.tweets[i].id;					
 
-							// loop through each publication feed to send message
-							for (var j in self.model.sb.pubs) {							
-								self.sb.send( self.model.sb.pubs[j].name, self.model.sb.pubs[j].type, vals[j] );                            
-							}				    	
+								// prep and then loop through each publication feed to send message
+								curTweet = self.model.data.tweets[i];						// load current tweet
+								vals = [JSON.stringify(curTweet), curTweet.text, "true"];	// set the values for each publication feed
+								for (var j in self.model.sb.pubs) {							
+									self.sb.send( self.model.sb.pubs[j].name, self.model.sb.pubs[j].type, vals[j] );                            
+								}				    	
+							}
 						}
 					}
 			    },
@@ -184,9 +204,35 @@ var Control = {};
 		 * @param  {String } query Twitter query string
 		 */
 		submit: function (query) {
-			if (true) console.log("[Control:submit] new query: " + query );
-			this.model.data.query = query;
+			var regex_lat = /([0-9]{1,2}.[0-9]{1,10})/
+				, regex_long = /([0-9]{1,3}.[0-9]{1,10})/
+				, regex_rad = /([0-9]{1,6})/
+				, match_results = undefined				
+				, geo_attrs = ["lat", "long", "radius"]
+				, regexes = [regex_lat, regex_long, regex_rad]
+				, geo_available = true
+				;
+
+			if (true) console.log("[Control:submit] new query: ", query );
+			this.model.data.query = query["query"];
+
+			// add the lat and long attributes to model
+			for (var i = 0; i < geo_attrs.length; i += 1) {
+				match_results = query[geo_attrs[i]].match(regexes[i]);
+				if (match_results) {
+					console.log(("matched " + geo_attrs[i] + " "), match_results);
+					this.model.data.geo[geo_attrs[i]] = query[geo_attrs[i]];
+				} else {
+					console.log("no match for " + geo_attrs[i]);
+					geo_available = false;
+				}							
+			}
+			if (geo_available) this.model.data.geo.available = true;
+			else this.model.data.geo.available = false;
+
 			this.model.data.tweets = [];
+			this.model.data.latest = 0;
+			this.view.clear();
 		    this.view.load();
 		    this._query();
 		}
@@ -225,16 +271,25 @@ var View = {};
 		 */
 		setup: function() {
 			var self = this;
-			$("#qSubmit").on("click", function() {
+			$(".qSubmit").on("click", function() {
 				if ($("#qText").val() != "" ) {
 					self.submit();
 				}
 			});
-			$("#qText").on("keypress", function(event) {
-				if ($("#qText").val() != "" && (event.charCode == 13 || event.charCode == 10)) {
-					self.submit();
-				}
-			});
+
+			var textInputs = ["#qText", "#latText", "#longText", "#radText"];
+			for (var i = 0; i < textInputs.length; i += 1) {
+				$(textInputs[i]).on("keypress", function(event) {
+					if ($(textInputs[i]).val() != "" && (event.charCode == 13 || event.charCode == 10)) {
+						self.submit();
+					}
+				});				
+			}
+			// $("#qText").on("keypress", function(event) {
+			// 	if ($("#qText").val() != "" && (event.charCode == 13 || event.charCode == 10)) {
+			// 		self.submit();
+			// 	}
+			// });
 		},
 
 		/**
@@ -253,12 +308,26 @@ var View = {};
 		 * 		the appropriate html objects.
 		 */
 		load: function() {
+			var tweets_len = model.data.tweets.length
+				, subtitle = ""
+				, $newEle
+				;
+
+			if (model.data.geo.available) {
+				subtitle = "Geocode Filter:" 
+							 + " lat " + model.data.geo.lat + ","
+							 + " long " + model.data.geo.long + ","
+							 + " radius " + model.data.geo.radius + " miles";
+			}
+
 			$("#query_results h1").text("Forwarding Tweets With:  " + model.data.query);
+
+			$("#query_results h2").text(subtitle);
 
 			$("#tweet_container .tweet").remove();        
 
 			for (var i in model.data.tweets) {
-				var $newEle = $("#templates .tweet").clone();
+				$newEle = $("#templates .tweet").clone();
 				$newEle.attr( {id: i} );
 				$newEle.find(".user").text(model.data.tweets[i].user);
 				$newEle.find(".text").text(model.data.tweets[i].text);
@@ -269,14 +338,25 @@ var View = {};
 		},
 
 		/**
+		 * clear Method that clears the list of tweets in the browser.
+		 */
+		clear: function() {
+			$("#tweet_container .tweet").remove();        
+		},
+
+		/**
 		 * submit Method that handle query submissions. It calls the controller's callback method that was
 		 * 		registered in the registerController method.
 		 */
 		submit: function() {
-			var msg;
+			var msg = {};
 			if (this.controller[this.submitFuncName]) {
-				msg = $("#qText").val();
-				this.controller[this.submitFuncName]((msg));			
+				msg.query = $("#qText").val();
+				msg.lat = $("#latText").val();
+				msg.long = $("#longText").val();
+				msg.radius = $("#radText").val();
+				this.controller[this.submitFuncName]((msg));
+				model.data.latest = 0;			
 			}
 		}
 	}
