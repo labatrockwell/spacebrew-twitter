@@ -24,21 +24,21 @@ var app = {}
 			    } 
 			]
 		},
-		"client": {
+		"input": {
 			"required": {
 				"query": {
-					"text": ""
+					"text": "string"
 				}
 			},
 			"optional": {
 				"geo": {
-					"lat": undefined,
-					"long": undefined,
-					"radius": undefined
+					"lat": "integer",
+					"long": "integer",
+					"radius": "integer"
 				}									
 			}
 		},
-		"server": {
+		"output": {
 			"tweets": {
 				"user": "",
 				"text": "",

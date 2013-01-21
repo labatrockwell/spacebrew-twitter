@@ -55,29 +55,39 @@ module.exports = {
         } 
 
         // if the query object featured a valid query then process it
-        if (queryJson.query) {
-            console.log("Valid query from id: " + queryJson.id + ", query : " + queryJson.query);        
+        // if (queryJson.query) {
+            // console.log("Valid query from id: " + queryJson.id + ", query : " + queryJson.query);        
+
+            // // if this is a different query
+            // if (!(this.model.clients[queryJson.id].query === queryJson.query)) {
+            //     console.log("Query is new");        
+            //     this.model.clients[queryJson.id].lastId = 0;
+            //     this.model.clients[queryJson.id].query = queryJson.query;
+            // }
+
+        if (queryJson.data.required.query.text) {
+            console.log("Valid query from id: " + queryJson.id + ", query : " + queryJson.data.required.query.text);        
 
             // if this is a different query
-            if (!(this.model.clients[queryJson.id].query === queryJson.query)) {
+            if ((this.model.clients[queryJson.id].query !== queryJson.data.required.query.text)) {
                 console.log("Query is new");        
                 this.model.clients[queryJson.id].lastId = 0;
-                this.model.clients[queryJson.id].query = queryJson.query;
+                this.model.clients[queryJson.id].query = queryJson.data.required.query.text;
             }
 
             // if queryJson object includes a geo object
             if (queryJson.geo) {
                 // if any of the geo filter attributes have changed then update the client object 
-                if ((queryJson.geo.lat != this.model.clients[queryJson.id].geo.lat) || 
-                    (queryJson.geo.long != this.model.clients[queryJson.id].geo.long) ||
-                    (queryJson.geo.radius != this.model.clients[queryJson.id].geo.radius) ||
-                    (queryJson.geo.available != this.model.clients[queryJson.id].geo.available)) 
+                if ((queryJson.data.optional.geo.lat != this.model.clients[queryJson.id].geo.lat) || 
+                    (queryJson.data.optional.geo.long != this.model.clients[queryJson.id].geo.long) ||
+                    (queryJson.data.optional.geo.radius != this.model.clients[queryJson.id].geo.radius) ||
+                    (queryJson.data.optional.geo.available != this.model.clients[queryJson.id].geo.available)) 
                 {
                     console.log("Geocode included : ", queryJson.geo);        
-                    this.model.clients[queryJson.id].geo.lat = queryJson.geo.lat;
-                    this.model.clients[queryJson.id].geo.long = queryJson.geo.long;
-                    this.model.clients[queryJson.id].geo.radius = queryJson.geo.radius;
-                    this.model.clients[queryJson.id].geo.available = queryJson.geo.available;                
+                    this.model.clients[queryJson.id].geo.lat = queryJson.data.optional.geo.lat;
+                    this.model.clients[queryJson.id].geo.long = queryJson.data.optional.geo.long;
+                    this.model.clients[queryJson.id].geo.radius = queryJson.data.optional.geo.radius;
+                    this.model.clients[queryJson.id].geo.available = queryJson.data.optional.geo.available;                
                     this.model.clients[queryJson.id].lastId = 0;     // reset last ID to 0
                 }
             }

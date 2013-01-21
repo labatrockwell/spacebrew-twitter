@@ -9,17 +9,18 @@ var Model = {};
 		}
 		this.config = config;
 
-		for (var type in this.config.client) {
-			for (var group in this.config.client[type]) {
-				this.data_test.input[group] = {};	
-				for (var entry in this.config.client[type][group]) {
-						this.data_test.input[group][entry] = 0;			
+		for (var type in this.config.input) {
+			this.data_test.input[type] = {};	
+			for (var group in this.config.input[type]) {
+				this.data_test.input[type][group] = {};	
+				for (var entry in this.config.input[type][group]) {
+						this.data_test.input[type][group][entry] = 0;			
 				}
-				this.data_test.input[group].available = false;
+				this.data_test.input[type][group].available = false;
 			}
 		}
 
-		for (var type in this.config.server) {
+		for (var type in this.config.output) {
 			this.data_test.output[type] = {};	
 			this.data_test.output[type].list = [];
 			this.data_test.output[type].latest = 0;
@@ -115,10 +116,8 @@ var Control = {};
 			if (this.model.data.query === "") return;
 			if (clientId == -1) return;
 
-			var query = { "query": 	escape(this.model.data.query)
-						, "id": 	clientId 
-						, "geo": 	this.model.data.geo 
-						, "input":  this.model.data_test.input } 
+			var query = { "id": 	clientId 
+						, "data":  this.model.data_test.input } 
 				, self = this;
 
 			if (true) console.log("[Control:_query] new query: ", query );
@@ -151,9 +150,18 @@ var Control = {};
 		    	    	}
 		    		}
 
+		    		// loop through the new tweet array to add each one to our model 
+				    for (var i = 0; i < jData.tweets.length; i++) {
+		    	    	if (jData.tweets[i].user && jData.tweets[i].text && jData.tweets[i].created_at ) {
+		    	    		self.model.data_test.output.tweets.list.unshift(jData.tweets[i]);
+		    	    	}
+		    		}
+
 		    		// if our model array has grown to large will shrink it back down
     	    		if (self.model.data.tweets.length > maxLen) {
+    	    		// if (self.model.data_test.output.tweets.list > maxLen) {
     		    		self.model.data.tweets = self.model.data.tweets.slice(0,maxLen);    			
+    		    		self.model.data_test.output.tweets.list = self.model.data_test.output.tweets.list.slice(0,maxLen);    			
     	    		}
 
     	    		// load the tweets to the page
@@ -166,7 +174,9 @@ var Control = {};
 
     	    		// update the latest variable if there are tweets in the queu
     	    		if (self.model.data.tweets.length > 0) {
+    	    		// if (self.model.data_test.output.tweets.list > 0) {
 						self.model.data.latest = self.model.data.tweets[0].id;					
+						self.model.data_test.output.tweets.latest = self.model.data_test.output.tweets.list[0].id;					
     	    		}
 			    },
 
@@ -184,14 +194,44 @@ var Control = {};
 			var regex_lat = /([0-9]{1,2}.[0-9]{1,10})/
 				, regex_long = /([0-9]{1,3}.[0-9]{1,10})/
 				, regex_rad = /([0-9]{1,6})/
+				, regex_integer = /[0-9\.-]+/
+				, regex_string = /[\w-]+/
 				, match_results = undefined				
 				, geo_attrs = ["lat", "long", "radius"]
 				, regexes = [regex_lat, regex_long, regex_rad]
+				, new_regexes = {"integer": regex_integer, "string": regex_string}
 				, geo_available = true
 				;
 
 			if (true) console.log("[Control:submit] new query: ", query );
+			if (true) console.log("[Control:submit] this.model.data_test.input: ", this.model.data_test.input );
 			this.model.data.query = query["text"];
+
+			// loop through each input to read each one				
+			for (var type in this.model.config.input) {
+				for (var group in this.model.config.input[type]) {
+					var data_available = true;
+
+					for (var attr in this.model.config.input[type][group]) {
+						var data_type = this.model.config.input[type][group][attr];
+
+						match_results = query[type][group][attr].match(new_regexes[data_type]);
+						if (match_results) {
+							console.log("matched " , match_results);
+							this.model.data_test.input[type][group][attr] = query[type][group][attr];
+						} else {
+							data_available = false;
+						}
+					}
+					if (data_available) {
+						this.model.data_test.input[type][group].available = true;
+					} else {
+						this.model.data_test.input[type][group].available = false;						
+					}
+				}
+				// console.log("[Control:submit] updated data_test object: " + this.model.data_test.input[type]);
+			}
+			if (true) console.log("[Control:submit] data test: ", this.model.data_test );
 
 			// add the lat and long attributes to model
 			for (var i = 0; i < geo_attrs.length; i += 1) {
@@ -209,6 +249,10 @@ var Control = {};
 
 			this.model.data.tweets = [];
 			this.model.data.latest = 0;
+
+			this.model.data_test.output.tweets.list = [];
+			this.model.data_test.output.tweets.latest = 0;
+
     		for (var i = 0; i < this.views.length; i += 1) {
 			    if (this.views[i]["clear"]) this.views[i].clear();	    			
 			    if (this.views[i]["load"]) this.views[i].load();	    			
@@ -287,14 +331,14 @@ View.Web = function (config) {
 				, htmlSettings;
 
 			// create the submission form as defined in the configuration object
-			for (var type in this.model.config.client) {
+			for (var type in this.model.config.input) {
 
 				// create the wrapper for different input types (required and optional)
 				htmlSettings = { id: type, title: (type + ' query fields.') };
 				$typeDiv = $('<div/>', htmlSettings).appendTo('#query_form');
 
 				// loop through each input group of current input type
-				for (var attr in this.model.config.client[type]) {
+				for (var attr in this.model.config.input[type]) {
 
 					// create new div object for the current input group 
 					htmlSettings = { class: type, id: attr, title: (type + ' query fields.') };
@@ -305,7 +349,7 @@ View.Web = function (config) {
 					$('<h2/>', htmlSettings).appendTo($groupDiv);
 
 					// loop through input group elements to creat text boxes
-					for (var sub_attr in this.model.config.client[type][attr]) {
+					for (var sub_attr in this.model.config.input[type][attr]) {
 						htmlSettings = { class: 'textBox', type: "text", value: sub_attr, id: sub_attr + "_textBox" };
 						$('<input/>', htmlSettings).appendTo($groupDiv);
 					}							
@@ -323,14 +367,14 @@ View.Web = function (config) {
 				, divSettings;
 
 			// create a template for the data as configured in object
-			for (var type in this.model.config.server) {
+			for (var type in this.model.config.output) {
 
 				// create the wrapper for each template type
 				divSettings = { class: type };
 				$typeDiv = $('<div/>', divSettings).appendTo('#templates');
 
 				// loop through each element of the current template
-				for (var attr in this.model.config.server[type]) {
+				for (var attr in this.model.config.output[type]) {
 
 					// create new span for each element 
 					divSettings = { class: attr };
@@ -356,29 +400,55 @@ View.Web = function (config) {
 		 * 		the appropriate html objects.
 		 */
 		load: function() {
+			// var tweets_len = this.model.data_test.output.tweets.list.length
 			var tweets_len = this.model.data.tweets.length
+				, title = ""
 				, subtitle = ""
 				, $newEle
 				;
 
-			console.log("[Web:load] this model data ", this.model.data.tweets);
+			console.log("[Web:load] this.model.config.input ", this.model.config.input);
+			console.log("[Web:load] this.model.data_test ", this.model.data_test);
+			console.log("[Web:load] this.model.data ", this.model.data);
 
-			for (var cur in this.model.data) {
+			for (var type in this.model.config.input) {
+				console.log("[Web:load] this model data ", type);
+
+				for (var cur in this.model.config.input[type]) {
+					subtitle += "::" + cur + " - ";
+					if (cur === "query") {
+						subtitle += this.model.data[cur];
+					} else {
+						for (var ele in this.model.config.input[type][cur]) {
+							if (this.model.data[cur].available && ele !== "available") {
+								subtitle += " " + ele + ": " + this.model.data[cur][ele];
+								console.log("[Web:load] cur " + cur + " ele " + ele);
+							} else {
+								subtitle = "";
+							}
+						}
+					}
+				}			
+				console.log("[Web:load] subtitle ",  subtitle);
+
+				var $ele = $("#query_results ." + type ).text(subtitle);
+
+				subtitle = "";
 
 			}
 
-			if (this.model.data.geo.available) {
-				subtitle = "Geocode Filter:" 
-							 + " lat " + this.model.data.geo.lat + ","
-							 + " long " + this.model.data.geo.long + ","
-							 + " radius " + this.model.data.geo.radius + " miles";
-			}
+			// if (this.model.data.geo.available) {
+			// 	subtitle = "Filters:" 
+			// 				 + " lat " + this.model.data.geo.lat + ","
+			// 				 + " long " + this.model.data.geo.long + ","
+			// 				 + " radius " + this.model.data.geo.radius + " miles";
+			// }
 
-			$("#query_results h1").text("Forwarding Tweets With:  " + this.model.data.query);
+			$("#query_results h1").text(title);
 
 			$("#query_results h2").text(subtitle);
 
-			$("#content .tweet").remove();        
+			$("#content .tweets").remove();        
 
 			for (var i in this.model.data.tweets) {
 				$newEle = $("#templates .tweets").clone();
@@ -406,11 +476,14 @@ View.Web = function (config) {
 			var msg = {};
 			if (this.controller[this.submitFuncName]) {
 
-				for (var type in this.model.config.client) {
-					// loop through each input group of current input type
-					for (var attr in this.model.config.client[type]) {
-						for (var sub_attr in this.model.config.client[type][attr]) {
-							msg[sub_attr] = $("#" + sub_attr + "_textBox").val();
+				// loop through each input to read each one				
+				for (var type in this.model.config.input) {
+					msg[type] = {};
+					for (var group in this.model.config.input[type]) {
+						msg[type][group] = {};
+						for (var attr in this.model.config.input[type][group]) {
+							msg[attr] = $("#" + attr + "_textBox").val();
+							msg[type][group][attr] = $("#" + attr + "_textBox").val();
 						}
 					}
 				}
