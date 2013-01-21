@@ -113,11 +113,11 @@ var Control = {};
 		 * @return {[type]} [description]
 		 */
 		_query: function () {
-			if (this.model.data.query === "") return;
+			if (this.model.data_test.input.required.query.text === "") return;
 			if (clientId == -1) return;
 
 			var query = { "id": 	clientId 
-						, "data":  this.model.data_test.input } 
+						, "data": 	this.model.data_test.input } 
 				, self = this;
 
 			if (true) console.log("[Control:_query] new query: ", query );
@@ -136,7 +136,7 @@ var Control = {};
 						, vals = [];
 
 					// if the response is not for the most recent query then don't process it
-					if (jData.query !== self.model.data.query) return;
+					if (jData.query !== self.model.data_test.input.required.query.text) return;
 
 					console.log("[Controller:_query:success] data test ", self.model.data_test);
 					// if (jData.query !== self.model.data_test.query.text) return;
@@ -146,21 +146,12 @@ var Control = {};
 		    		// loop through the new tweet array to add each one to our model 
 				    for (var i = 0; i < jData.tweets.length; i++) {
 		    	    	if (jData.tweets[i].user && jData.tweets[i].text && jData.tweets[i].created_at ) {
-		    	    		self.model.data.tweets.unshift(jData.tweets[i]);
-		    	    	}
-		    		}
-
-		    		// loop through the new tweet array to add each one to our model 
-				    for (var i = 0; i < jData.tweets.length; i++) {
-		    	    	if (jData.tweets[i].user && jData.tweets[i].text && jData.tweets[i].created_at ) {
 		    	    		self.model.data_test.output.tweets.list.unshift(jData.tweets[i]);
 		    	    	}
 		    		}
 
 		    		// if our model array has grown to large will shrink it back down
-    	    		if (self.model.data.tweets.length > maxLen) {
-    	    		// if (self.model.data_test.output.tweets.list > maxLen) {
-    		    		self.model.data.tweets = self.model.data.tweets.slice(0,maxLen);    			
+    	    		if (self.model.data_test.output.tweets.list > maxLen) {
     		    		self.model.data_test.output.tweets.list = self.model.data_test.output.tweets.list.slice(0,maxLen);    			
     	    		}
 
@@ -172,10 +163,8 @@ var Control = {};
 					    }
     	    		}
 
-    	    		// update the latest variable if there are tweets in the queu
-    	    		if (self.model.data.tweets.length > 0) {
-    	    		// if (self.model.data_test.output.tweets.list > 0) {
-						self.model.data.latest = self.model.data.tweets[0].id;					
+    	    		// update the latest variable if there are tweets in the queu				
+    	    		if (self.model.data_test.output.tweets.list > 0) {
 						self.model.data_test.output.tweets.latest = self.model.data_test.output.tweets.list[0].id;					
     	    		}
 			    },
@@ -205,7 +194,7 @@ var Control = {};
 
 			if (true) console.log("[Control:submit] new query: ", query );
 			if (true) console.log("[Control:submit] this.model.data_test.input: ", this.model.data_test.input );
-			this.model.data.query = query["text"];
+			// this.model.data.query = query["text"];
 
 			// loop through each input to read each one				
 			for (var type in this.model.config.input) {
@@ -232,23 +221,6 @@ var Control = {};
 				// console.log("[Control:submit] updated data_test object: " + this.model.data_test.input[type]);
 			}
 			if (true) console.log("[Control:submit] data test: ", this.model.data_test );
-
-			// add the lat and long attributes to model
-			for (var i = 0; i < geo_attrs.length; i += 1) {
-				match_results = query[geo_attrs[i]].match(regexes[i]);
-				if (match_results) {
-					console.log(("matched " + geo_attrs[i] + " "), match_results);
-					this.model.data.geo[geo_attrs[i]] = query[geo_attrs[i]];
-				} else {
-					console.log("no match for " + geo_attrs[i]);
-					geo_available = false;
-				}							
-			}
-			if (geo_available) this.model.data.geo.available = true;
-			else this.model.data.geo.available = false;
-
-			this.model.data.tweets = [];
-			this.model.data.latest = 0;
 
 			this.model.data_test.output.tweets.list = [];
 			this.model.data_test.output.tweets.latest = 0;
@@ -400,62 +372,45 @@ View.Web = function (config) {
 		 * 		the appropriate html objects.
 		 */
 		load: function() {
-			// var tweets_len = this.model.data_test.output.tweets.list.length
-			var tweets_len = this.model.data.tweets.length
+			var tweets_len = this.model.data_test.output.tweets.list.length
 				, title = ""
 				, subtitle = ""
 				, $newEle
 				;
 
-			console.log("[Web:load] this.model.config.input ", this.model.config.input);
 			console.log("[Web:load] this.model.data_test ", this.model.data_test);
-			console.log("[Web:load] this.model.data ", this.model.data);
 
 			for (var type in this.model.config.input) {
 				console.log("[Web:load] this model data ", type);
 
 				for (var cur in this.model.config.input[type]) {
 					subtitle += "::" + cur + " - ";
-					if (cur === "query") {
-						subtitle += this.model.data[cur];
-					} else {
-						for (var ele in this.model.config.input[type][cur]) {
-							if (this.model.data[cur].available && ele !== "available") {
-								subtitle += " " + ele + ": " + this.model.data[cur][ele];
-								console.log("[Web:load] cur " + cur + " ele " + ele);
-							} else {
-								subtitle = "";
-							}
+					for (var ele in this.model.config.input[type][cur]) {
+						console.log("[Web:load] HERE ", this.model.data_test.input[type][cur]);
+						if (this.model.data_test.input[type][cur].available && ele !== "available") {
+							subtitle += " " + ele + ": " + this.model.data_test.input[type][cur][ele];
+							console.log("[Web:load] cur " + cur + " ele " + ele);
+						} else {
+							subtitle = "";
 						}
 					}
 				}			
 				console.log("[Web:load] subtitle ",  subtitle);
-
 				var $ele = $("#query_results ." + type ).text(subtitle);
-
 				subtitle = "";
 
 			}
 
-			// if (this.model.data.geo.available) {
-			// 	subtitle = "Filters:" 
-			// 				 + " lat " + this.model.data.geo.lat + ","
-			// 				 + " long " + this.model.data.geo.long + ","
-			// 				 + " radius " + this.model.data.geo.radius + " miles";
-			// }
-
-			$("#query_results h1").text(title);
-
-			$("#query_results h2").text(subtitle);
-
 			$("#content .tweets").remove();        
 
-			for (var i in this.model.data.tweets) {
+			// for (var i in this.model.data.tweets) {
+			for (var tweet in this.model.data_test.output.tweets.list) {
 				$newEle = $("#templates .tweets").clone();
-				$newEle.attr( {id: i} );
-				$newEle.find(".user").text(this.model.data.tweets[i].user +  "  ::  ");
-				$newEle.find(".text").text(this.model.data.tweets[i].text +  "  ::  ");
-				$newEle.find(".created_at").text(this.model.data.tweets[i].created_at);
+				$newEle.attr( {id: tweet} );
+				for (var attr in this.model.data_test.output.tweets.list[tweet]) {
+					var cur_val = this.model.data_test.output.tweets.list[tweet][attr];
+					$newEle.find("." + attr).text(cur_val +  "  ::  ");
+				}
 				$newEle.appendTo('#content');
 				console.log("[Web:load] created a new list item", $newEle);
 			}	
@@ -489,7 +444,7 @@ View.Web = function (config) {
 				}
 				console.log("submit - msg ", msg);
 				this.controller[this.submitFuncName]((msg));
-				this.model.data.latest = 0;			
+				// this.model.data.latest = 0;			
 			}
 		}
 	}
@@ -572,22 +527,21 @@ View.Spacebrew = function (config) {
 		load: function() {
 			// console.log("[Spacebrew:load] latest ", this.model.data.latest);
 
-			for (var i = this.model.data.tweets.length - 1; i >= 0; i--) {
+			var tweet_list = this.model.data_test.output.tweets.list;
+			for (var i = tweet_list.length - 1; i >= 0; i--) {
 				// if this is a tweet that has not been sent yet, then send it
-				if (this.model.data.tweets[i].id > this.model.data.latest) {
-					console.log("[Spacebrew:load] sending to spacbrew data ", this.model.data.tweets[i]);
+				if (tweet_list[i].id > this.model.data_test.output.tweets.latest) {
+					console.log("[Spacebrew:load] sending to spacbrew data ", tweet_list[i]);
 
 					// prep and then loop through each publication feed to send message
-					curTweet = this.model.data.tweets[i];					// load current tweet
+					curTweet = tweet_list[i];					// load current tweet
 					vals = [JSON.stringify(curTweet), curTweet.text, "true"];	// set the values for each publication feed
 					for (var j in this.model.config.sb.pubs) {							
 						this.sb.send( this.model.config.sb.pubs[j].name, this.model.config.sb.pubs[j].type, vals[j] );                            
 					}				    	
 				}
 			}
-
 		}
-
 	}
 
 
