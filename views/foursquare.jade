@@ -1,30 +1,7 @@
 extend layout
 
-block header_script_post
-  script(src='/js/front_end.js')
-
-block query_bar
-  .required
-    h1.title Location Coords:<br/>
-    input#latText(type="text", name="twitter query", value="enter latitude") 
-    <br/> 
-    input#longText(type="text", name="twitter query", value="enter longitude") 
-    <br/> 
-    input#radText(type="text", name="twitter query", value="enter radius") 
-    <br/> 
-    input.qSubmit(type="button", name="submit query", value="Query") 
- 
 block query_results
   .header
     h1 Enter coordinates to forward near-by check-ins to Spacebrew.
     h2 
   #content
-
-block query_item
-    .tweet 
-      span.user
-      | : 
-      span.text
-      | [
-      span.created_at
-      |]

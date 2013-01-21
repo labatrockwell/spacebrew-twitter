@@ -171,19 +171,19 @@ header {
 #query_results #content {
   padding-top: 10px;
 }
-#query_results .tweet {
+#query_results .tweets {
   padding-top: 10px;
   padding-bottom: 10px;
   font-size: 12px;
   line-height: 1.5;
 }
-#query_results .tweet .user {
+#query_results .tweets .user {
   font-weight: bold;
 }
-#query_results .tweet .text {
+#query_results .tweets .text {
   font-weight: normal;
 }
-#query_results .tweet .time {
+#query_results .tweets .time {
   font-weight: normal;
 }
 p {

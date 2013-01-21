@@ -129,9 +129,11 @@ module.exports = {
 
             // make a http request for the access token
             this.request(auth_req, function(error, response, body) {
-                console.log("error msg ", error)
+                // handle errors
+                if (error) console.log("error msg ", error)
+
                 // send response body to be processed
-                self.handleTokenResponse(body, res, client.id);
+                else self.handleTokenResponse(body, res, client.id);
             });
         }
 
@@ -147,7 +149,6 @@ module.exports = {
         // convert body of message to json variable
         var body_json = JSON.parse(unescape(body))
             , main_page
-            // , client = this.newClient()
             ;
 
         console.log("converted to json: ", body_json);
@@ -159,13 +160,6 @@ module.exports = {
             console.log("[handleTokenRequest] received auth token ", this.model.clients[id].auth.access_token)
             res.redirect('/foursquare?client_id=' + id);
         }
-
-        // check json object for access token attribute
-        if(body_json["error"]) {
-            console.log("[handleTokenRequest] error encountered ", body_json)
-            res.render('[handleTokenRequest] error with foursquare authentication')                    
-        }
-
     },
 
     /**
