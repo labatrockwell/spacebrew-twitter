@@ -10,46 +10,32 @@ var Model = {};
 		this.config = config;
 
 		for (var type in this.config.input) {
-			this.data_test.input[type] = {};	
+			this.data.input[type] = {};	
 			for (var group in this.config.input[type]) {
-				this.data_test.input[type][group] = {};	
+				this.data.input[type][group] = {};	
 				for (var entry in this.config.input[type][group]) {
-						this.data_test.input[type][group][entry] = 0;			
+						this.data.input[type][group][entry] = 0;			
 				}
-				this.data_test.input[type][group].available = false;
+				this.data.input[type][group].available = false;
 			}
 		}
 
 		for (var type in this.config.output) {
-			this.data_test.output[type] = {};	
-			this.data_test.output[type].list = [];
-			this.data_test.output[type].latest = 0;
+			this.data.output[type] = {};	
+			this.data.output[type].list = [];
+			this.data.output[type].latest = 0;
 		}
 
-		console.log("Model.Main function reset refresh: ", this.data_test);
+		console.log("Model.Main - model has been created: ", this.data);
 	}
 
 	Model.Main.prototype = {
 		constructor: Model.Main,
 		config: {},
-
 		data: {
-			tweets: [],
-			latest: 0,
-			query: "",
-			geo: {
-				lat: undefined,
-				long: undefined,
-				radius: undefined,
-				available: false
-			}
-		},
-
-		data_test: {
 			input: {},
 			output: {}
 		},
-
 		controls: {
 			refresh: 30000
 		}
@@ -113,11 +99,11 @@ var Control = {};
 		 * @return {[type]} [description]
 		 */
 		_query: function () {
-			if (this.model.data_test.input.required.query.text === "") return;
+			if (this.model.data.input.required.query.text === "") return;
 			if (clientId == -1) return;
 
 			var query = { "id": 	clientId 
-						, "data": 	this.model.data_test.input } 
+						, "data": 	this.model.data.input } 
 				, self = this;
 
 			if (true) console.log("[Control:_query] new query: ", query );
@@ -136,23 +122,23 @@ var Control = {};
 						, vals = [];
 
 					// if the response is not for the most recent query then don't process it
-					if (jData.query !== self.model.data_test.input.required.query.text) return;
+					if (jData.query !== self.model.data.input.required.query.text) return;
 
-					console.log("[Controller:_query:success] data test ", self.model.data_test);
-					// if (jData.query !== self.model.data_test.query.text) return;
+					console.log("[Controller:_query:success] data test ", self.model.data);
+					// if (jData.query !== self.model.data.query.text) return;
 
 					console.log("[Controller:_query:success] tweets received ", jData.tweets);
 
 		    		// loop through the new tweet array to add each one to our model 
 				    for (var i = 0; i < jData.tweets.length; i++) {
 		    	    	if (jData.tweets[i].user && jData.tweets[i].text && jData.tweets[i].created_at ) {
-		    	    		self.model.data_test.output.tweets.list.unshift(jData.tweets[i]);
+		    	    		self.model.data.output.tweets.list.unshift(jData.tweets[i]);
 		    	    	}
 		    		}
 
 		    		// if our model array has grown to large will shrink it back down
-    	    		if (self.model.data_test.output.tweets.list > maxLen) {
-    		    		self.model.data_test.output.tweets.list = self.model.data_test.output.tweets.list.slice(0,maxLen);    			
+    	    		if (self.model.data.output.tweets.list > maxLen) {
+    		    		self.model.data.output.tweets.list = self.model.data.output.tweets.list.slice(0,maxLen);    			
     	    		}
 
     	    		// load the tweets to the page
@@ -164,8 +150,8 @@ var Control = {};
     	    		}
 
     	    		// update the latest variable if there are tweets in the queu				
-    	    		if (self.model.data_test.output.tweets.list > 0) {
-						self.model.data_test.output.tweets.latest = self.model.data_test.output.tweets.list[0].id;					
+    	    		if (self.model.data.output.tweets.list > 0) {
+						self.model.data.output.tweets.latest = self.model.data.output.tweets.list[0].id;					
     	    		}
 			    },
 
@@ -193,8 +179,7 @@ var Control = {};
 				;
 
 			if (true) console.log("[Control:submit] new query: ", query );
-			if (true) console.log("[Control:submit] this.model.data_test.input: ", this.model.data_test.input );
-			// this.model.data.query = query["text"];
+			if (true) console.log("[Control:submit] this.model.data.input: ", this.model.data.input );
 
 			// loop through each input to read each one				
 			for (var type in this.model.config.input) {
@@ -207,23 +192,23 @@ var Control = {};
 						match_results = query[type][group][attr].match(new_regexes[data_type]);
 						if (match_results) {
 							console.log("matched " , match_results);
-							this.model.data_test.input[type][group][attr] = query[type][group][attr];
+							this.model.data.input[type][group][attr] = query[type][group][attr];
 						} else {
 							data_available = false;
 						}
 					}
 					if (data_available) {
-						this.model.data_test.input[type][group].available = true;
+						this.model.data.input[type][group].available = true;
 					} else {
-						this.model.data_test.input[type][group].available = false;						
+						this.model.data.input[type][group].available = false;						
 					}
 				}
-				// console.log("[Control:submit] updated data_test object: " + this.model.data_test.input[type]);
+				// console.log("[Control:submit] updated data object: " + this.model.data.input[type]);
 			}
-			if (true) console.log("[Control:submit] data test: ", this.model.data_test );
+			if (true) console.log("[Control:submit] data test: ", this.model.data );
 
-			this.model.data_test.output.tweets.list = [];
-			this.model.data_test.output.tweets.latest = 0;
+			this.model.data.output.tweets.list = [];
+			this.model.data.output.tweets.latest = 0;
 
     		for (var i = 0; i < this.views.length; i += 1) {
 			    if (this.views[i]["clear"]) this.views[i].clear();	    			
@@ -372,13 +357,13 @@ View.Web = function (config) {
 		 * 		the appropriate html objects.
 		 */
 		load: function() {
-			var tweets_len = this.model.data_test.output.tweets.list.length
+			var tweets_len = this.model.data.output.tweets.list.length
 				, title = ""
 				, subtitle = ""
 				, $newEle
 				;
 
-			console.log("[Web:load] this.model.data_test ", this.model.data_test);
+			console.log("[Web:load] this.model.data ", this.model.data);
 
 			for (var type in this.model.config.input) {
 				console.log("[Web:load] this model data ", type);
@@ -386,9 +371,9 @@ View.Web = function (config) {
 				for (var cur in this.model.config.input[type]) {
 					subtitle += "::" + cur + " - ";
 					for (var ele in this.model.config.input[type][cur]) {
-						console.log("[Web:load] HERE ", this.model.data_test.input[type][cur]);
-						if (this.model.data_test.input[type][cur].available && ele !== "available") {
-							subtitle += " " + ele + ": " + this.model.data_test.input[type][cur][ele];
+						console.log("[Web:load] HERE ", this.model.data.input[type][cur]);
+						if (this.model.data.input[type][cur].available && ele !== "available") {
+							subtitle += " " + ele + ": " + this.model.data.input[type][cur][ele];
 							console.log("[Web:load] cur " + cur + " ele " + ele);
 						} else {
 							subtitle = "";
@@ -403,12 +388,11 @@ View.Web = function (config) {
 
 			$("#content .tweets").remove();        
 
-			// for (var i in this.model.data.tweets) {
-			for (var tweet in this.model.data_test.output.tweets.list) {
+			for (var tweet in this.model.data.output.tweets.list) {
 				$newEle = $("#templates .tweets").clone();
 				$newEle.attr( {id: tweet} );
-				for (var attr in this.model.data_test.output.tweets.list[tweet]) {
-					var cur_val = this.model.data_test.output.tweets.list[tweet][attr];
+				for (var attr in this.model.data.output.tweets.list[tweet]) {
+					var cur_val = this.model.data.output.tweets.list[tweet][attr];
 					$newEle.find("." + attr).text(cur_val +  "  ::  ");
 				}
 				$newEle.appendTo('#content');
@@ -444,7 +428,6 @@ View.Web = function (config) {
 				}
 				console.log("submit - msg ", msg);
 				this.controller[this.submitFuncName]((msg));
-				// this.model.data.latest = 0;			
 			}
 		}
 	}
@@ -525,12 +508,10 @@ View.Spacebrew = function (config) {
 		},
 
 		load: function() {
-			// console.log("[Spacebrew:load] latest ", this.model.data.latest);
-
-			var tweet_list = this.model.data_test.output.tweets.list;
+			var tweet_list = this.model.data.output.tweets.list;
 			for (var i = tweet_list.length - 1; i >= 0; i--) {
 				// if this is a tweet that has not been sent yet, then send it
-				if (tweet_list[i].id > this.model.data_test.output.tweets.latest) {
+				if (tweet_list[i].id > this.model.data.output.tweets.latest) {
 					console.log("[Spacebrew:load] sending to spacbrew data ", tweet_list[i]);
 
 					// prep and then loop through each publication feed to send message

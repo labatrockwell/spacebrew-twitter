@@ -1,5 +1,4 @@
 module.exports = {
-
     request: require("request"),
 
     model: {

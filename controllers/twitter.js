@@ -12,6 +12,31 @@ module.exports = {
     },
 
     /**
+     * newClient Increments the curClientId and then add a new client to the this.model.clients object, assigning
+     *     to it the new client id.
+     * @param  {Object} config  Configuration object with an application name
+     * @return {this.model.Client}   Returns the client object that was just created
+     */
+    newClient: function () {
+        this.model.curClientId++;
+        var clientId = this.model.curClientId;
+        this.model.clients[clientId] = {
+            "id": clientId,
+            "query": "",
+            "results": {},
+            "lastId": 0,
+            "reply": undefined,
+            "geo": {
+                "lat": 0,
+                "long": 0,
+                "radius": 0,
+                "available": "false"
+            }
+        } 
+        return this.model.clients[clientId];
+    },
+
+    /**
      * handleAppRequest Callback function that handles requests for the twitter app. These requests are parsed to
      *     extract the app name from the URL. Once that is done, a new client object is created and then the appropriate 
      *     page template is rendered. The client id, page title and subtitle are passed to the front-end page that is 
@@ -49,41 +74,32 @@ module.exports = {
 
         console.log("[handleQueryRequest] json query ", queryJson)
 
+        // if the client id is not defined or the client does not exist, then create a new client
         if (!queryJson.id || !this.model.clients[queryJson.id]) {
             client = this.newClient();
             queryJson.id = client.id;
         } 
 
-        // if the query object featured a valid query then process it
-        // if (queryJson.query) {
-            // console.log("Valid query from id: " + queryJson.id + ", query : " + queryJson.query);        
-
-            // // if this is a different query
-            // if (!(this.model.clients[queryJson.id].query === queryJson.query)) {
-            //     console.log("Query is new");        
-            //     this.model.clients[queryJson.id].lastId = 0;
-            //     this.model.clients[queryJson.id].query = queryJson.query;
-            // }
-
+        // make sure that the incoming request includes a text query
         if (queryJson.data.required.query.text) {
-            console.log("Valid query from id: " + queryJson.id + ", query : " + queryJson.data.required.query.text);        
+            console.log("[handleQueryRequest] Valid query from id: " + queryJson.id + ", query : " + queryJson.data.required.query.text);        
 
-            // if this is a different query
+            // check if this query differs from the current one, if so then re-initialize the lastId, and query vars
             if ((this.model.clients[queryJson.id].query !== queryJson.data.required.query.text)) {
-                console.log("Query is new");        
+                console.log("[handleQueryRequest] Query is new");        
                 this.model.clients[queryJson.id].lastId = 0;
                 this.model.clients[queryJson.id].query = queryJson.data.required.query.text;
             }
 
-            // if queryJson object includes a geo object
-            if (queryJson.geo) {
-                // if any of the geo filter attributes have changed then update the client object 
+            // if query includes geo filter, then process it
+            if (queryJson.data.optional.geo) {
+                // check if any of the geo filter attributes have changed then update the client object 
                 if ((queryJson.data.optional.geo.lat != this.model.clients[queryJson.id].geo.lat) || 
                     (queryJson.data.optional.geo.long != this.model.clients[queryJson.id].geo.long) ||
                     (queryJson.data.optional.geo.radius != this.model.clients[queryJson.id].geo.radius) ||
                     (queryJson.data.optional.geo.available != this.model.clients[queryJson.id].geo.available)) 
                 {
-                    console.log("Geocode included : ", queryJson.geo);        
+                    console.log("[handleQueryRequest] Geocode included : ", queryJson.data.optional.geo);        
                     this.model.clients[queryJson.id].geo.lat = queryJson.data.optional.geo.lat;
                     this.model.clients[queryJson.id].geo.long = queryJson.data.optional.geo.long;
                     this.model.clients[queryJson.id].geo.radius = queryJson.data.optional.geo.radius;
@@ -92,9 +108,9 @@ module.exports = {
                 }
             }
 
-            // set the ajax_req flag to true and create the callback function
+            // create the callback function to respond to request once data has been received from twitter
             this.model.clients[queryJson.id].reply = function(data) {
-                console.log("[this.model.clients[queryJson.id].reply] callback method: ", data);
+                console.log("[handleQueryRequest] callback method: ", data);
                 res.end(data);                
             }
 
@@ -120,17 +136,21 @@ module.exports = {
         console.log("[queryTemboo] new request made: ", searchT);
         console.log("[queryTemboo] geocode: ", geocodeT);
 
+        // abort search if query (held in searchT) is not a valid string
         if (!this.isString(searchT)) return;    // return if search term not valid
 
-        // set-up the temboo service connection
+        // request a temboo choreo object to execute query
         var Twitter = require("temboo/Library/Twitter/Search");
         var queryChoreo = new Twitter.Query(self.session);
         
         // Instantiate and populate the input set for the choreo
         var queryInputs = queryChoreo.newInputSet();
         queryInputs.set_ResponseFormat("json");     // requesting response in json
-        queryInputs.set_Query(searchT);             // setting the search query
+        queryInputs.set_Query(searchT);             // setting the search query    
         queryInputs.set_SinceId(this.model.clients[clientId].lastId);
+        queryInputs.set_IncludeEntities(true);      // request add'l metadata
+
+        // if geocode available, then process it and add it to query
         if (geocodeT.available) {
             geocodeString = "" + this.model.clients[clientId].geo.lat 
                             + "," + this.model.clients[clientId].geo.long 
@@ -151,12 +171,18 @@ module.exports = {
                 newTweet = {},
                 vals = "";
 
+            // if the response includes a query and results then process it
             if (tResults.query && tResults.results) {
-                console.log( "[successCallback] results received for query: " + tResults.query );
+                console.log( "[successCallback:queryTemboo] query: " + tResults.query );
+                console.log( "[successCallback:queryTemboo] results : ", tResults.results );
 
+                // save results in the model
                 self.model.clients[clientId].results = tResults.results;
+
+                // loop through results to prepare data to send to front end
                 for(var i = self.model.clients[clientId].results.length - 1; i >= 0; i--) {
                     if (self.model.clients[clientId].results[i].id > self.model.clients[clientId].lastId) {
+                    // console.log( "[successCallback:queryTemboo] result : d" + tResults.results );
                         newTweet = {
                             "user": self.model.clients[clientId].results[i].from_user,
                             "text": self.model.clients[clientId].results[i].text,
@@ -170,8 +196,8 @@ module.exports = {
                     }
                 }
 
-                console.log("[queryTemboo] number of new tweets: ", newTweets.length);
-                if (newTweets.length > 0) console.log("[queryTemboo] list of new tweets:\n", newTweets);
+                // call appropriate response methods for client that made request
+                console.log("[successCallback:queryTemboo] new tweets: ", newTweets);
                 if (self.model.clients[clientId][callbackName]) {
                     var reply_obj = {"tweets" : newTweets, "query": self.model.clients[clientId].query };
                     self.model.clients[clientId][callbackName](JSON.stringify(reply_obj));
@@ -185,31 +211,6 @@ module.exports = {
             successCallback,
             function(error) {console.log(error.type); console.log(error.message);}
         );
-    },
-
-    /**
-     * newClient Increments the curClientId and then add a new client to the this.model.clients object, assigning
-     *     to it the new client id.
-     * @param  {Object} config  Configuration object with an application name
-     * @return {this.model.Client}   Returns the client object that was just created
-     */
-    newClient: function (config) {
-        this.model.curClientId++;
-        var clientId = this.model.curClientId;
-        this.model.clients[clientId] = {
-            "id": clientId,
-            "query": "",
-            "results": {},
-            "lastId": 0,
-            "reply": undefined,
-            "geo": {
-                "lat": 0,
-                "long": 0,
-                "radius": 0,
-                "available": "false"
-            }
-        } 
-        return this.model.clients[clientId];
     },
 
     /**

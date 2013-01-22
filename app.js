@@ -5,6 +5,8 @@ var express = require('express')
     , appList = ['twitter']
     , tauth = require("./auth/auth_temboo").tAuth
     , tsession = require("temboo/core/temboosession")
+    // , WebSocket = require("ws")
+    , sb = require("./sb").Spacebrew
     , session = new tsession.TembooSession(tauth.user, tauth.app, tauth.key)
 
     // root app handlers
@@ -29,6 +31,16 @@ var express = require('express')
     // create application
     , app = express()       
     ;   // close 'var' statement
+
+
+// Spacebrew Server-Side Connection Test
+var sbConnect = new sb.Client("sandbox.spacebrew.cc", "Server Side Lovin", "You know you want it.");
+    sbConnect.addPublish( "get some", "boolean", "false" );
+    sbConnect.addSubscribe( "send some back", "boolean" );
+    sbConnect.onOpen = function () { console.log("Spacebrew connection ESTABLISHED")};
+    sbConnect.onClose = function () { console.log("Spacebrew connection CLOSED")};
+    sbConnect.onBooleanMessage = function (name,val) { console.log("Received " + val + " from " + name)};
+    sbConnect.connect();
 
 // process the arguments passed into app via launch command in terminal
 process.argv.forEach(readArgv); 
@@ -55,7 +67,6 @@ app.get('/foursquare/search', handleFoursquareQuery);
 app.get('/foursquare/query', handleFoursquareQuery);
 
 app.listen(model.httpPort)    
-
 
 //////////////////
 //////////////////
