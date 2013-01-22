@@ -1,51 +1,39 @@
 var app = {}
 	, config = {
 		"sb": {
-			"name": unescape(getQueryString("name")) || "space_tweets_front",
-			"description": unescape(getQueryString("description")) || "web app that forwards tweets to spacebrew",
+			"name": unescape(getQueryString("name")) || "space_fs_check_ins",
+			"description": unescape(getQueryString("description")) || "web app that forwards foursquare check-ins to spacebrew",
 			"pubs": [
 			    { 
-			    	"name": 'users_and_tweets', 	
+			    	"name": 'people', 	
 			    	"type": 'string' 
-			    }, 
-			    { 
-			    	"name": 'tweets', 				
-			    	"type": 'string' 
-			    }, 
-			    { 
-			    	"name": 'new_tweets', 
-			    	"type": 'boolean' 
 			    }
 			],
 			"subs": [
 			    { 
-			    	"name": 'query', 
+			    	"name": 'lat, long', 
 			    	"type": 'string' 
 			    } 
 			]
 		},
 		"input": {
 			"required": {
-				"query": {
-					"text": "string"
-				}
+				"my friends": {}
 			},
 			"optional": {
 				"geo": {
 					"lat": "integer",
 					"long": "integer",
-					"radius": "integer"
 				}									
 			}
 		},
 		"output": {
-			"tweets": {
+			"check-ins": {
 				"user": "",
-				"text": "",
-				"created_at": ""
 			}
 		},
-		"query_path" : "/twitter/search"
+
+		"query_path" : "/foursquare/search"
 	};
 
 $(window).bind("load", function() {

@@ -23,6 +23,7 @@ module.exports = {
         this.model.clients[clientId] = {
             "id": clientId,
             "query": "",
+            "request": {},
             "results": {},
             "lastId": 0,
             "reply": undefined,
@@ -67,8 +68,8 @@ module.exports = {
      */
     handleQueryRequest: function (req, res) {
         var urlReq = require('url').parse(req.url, true)    // get the full URL request
-            , query = urlReq.search.replace(/\?/, "")       // get query string from URL request, remove the leading '?'
-            , queryJson = JSON.parse(unescape(query))      // convert string to json (unescape to convert string format first)
+            // , query = urlReq.search.replace(/\?/, "")       // get query string from URL request, remove the leading '?'
+            , queryJson = JSON.parse(unescape(urlReq.search.replace(/\?/, "")))      // convert string to json (unescape to convert string format first)
             , client                                       // will hold client object
             ;
 
@@ -79,6 +80,8 @@ module.exports = {
             client = this.newClient();
             queryJson.id = client.id;
         } 
+
+        this.model.clients[queryJson.id].request = this.model.clients[queryJson.id];
 
         // make sure that the incoming request includes a text query
         if (queryJson.data.required.query.text) {
@@ -199,7 +202,7 @@ module.exports = {
                 // call appropriate response methods for client that made request
                 console.log("[successCallback:queryTemboo] new tweets: ", newTweets);
                 if (self.model.clients[clientId][callbackName]) {
-                    var reply_obj = {"tweets" : newTweets, "query": self.model.clients[clientId].query };
+                    var reply_obj = {"list" : newTweets, "query": self.model.clients[clientId].query };
                     self.model.clients[clientId][callbackName](JSON.stringify(reply_obj));
                 }
             }
