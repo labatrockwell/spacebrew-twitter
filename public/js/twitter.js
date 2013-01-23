@@ -48,9 +48,17 @@ var app = {}
 		"query_path" : "/twitter/search"
 	};
 
+ function sbLoadTweet(curTweet, pubs, sb) {
+	vals = [JSON.stringify(curTweet), curTweet.text, "true"];	// set the values for each publication feed
+	for (var j in pubs) {							
+		sb.send( pubs[j].name, pubs[j].type, vals[j] );                            
+	}				    	
+}	
+
 $(window).bind("load", function() {
 	app.model = new Model.Main(config);
 	app.web_view = new View.Web({"model": app.model});
 	app.sb_view = new View.Spacebrew({"model": app.model});
+	app.sb_view.addCallback("load", "sbLoadTweet", this);
 	app.control = new Control.Main([app.web_view, app.sb_view], app.model);
 });

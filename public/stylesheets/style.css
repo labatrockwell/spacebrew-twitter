@@ -159,31 +159,30 @@ header {
   border-bottom: 1px dotted #000;
 }
 #query_results .required {
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: bold;
   padding-top: 10px;
   padding-bottom: 10px;
 }
 #query_results .optional {
   font-size: 12px;
+  font-weight: normal;
   padding-top: 0px;
   padding-bottom: 10px;
 }
 #query_results #content {
   padding-top: 10px;
 }
-#query_results .tweets {
+.content_elements {
   padding-top: 10px;
   padding-bottom: 10px;
   font-size: 12px;
   line-height: 1.5;
 }
-#query_results .tweets .user {
+.content_elements .user {
   font-weight: bold;
 }
-#query_results .tweets .text {
-  font-weight: normal;
-}
-#query_results .tweets .time {
+.content_elements .content_element_attr {
   font-weight: normal;
 }
 p {

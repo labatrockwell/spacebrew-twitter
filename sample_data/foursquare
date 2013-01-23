@@ -1,0 +1,123 @@
+FROM SERVER
+
+{
+	address: "725 Park Ave."
+	checkinsCount: 2493
+	city: "New York"
+	country: "United States"
+	createdAt: 1284840124
+	id: "4c951abc94a0236a71159312"
+	lat: 40.7697999379072
+	long: -73.9645765238531
+	photo: "https://foursquare.com/img/blank_boy.png"
+	state: "NY"
+	user: "julio terra"
+	venue: "Asia Society"
+}
+
+
+
+FROM FOURSQUARE
+
+{
+	"meta":{
+		"code":200
+	},
+	"notifications":[
+		{
+			"type":"notificationTray",
+			"item":{
+				"unreadCount":6
+			}
+		}
+	],
+	"response":{
+		"recent":[
+			{
+				"id":"50fed0dde4b0fb41b9de334d",
+				"createdAt":1358876893,
+				"type":"checkin",
+				"timeZone":"America\/New_York",
+				"timeZoneOffset":-300,
+				"user":{
+					"id":"327177",
+					"firstName":"Tianwei",
+					"lastName":"Liu",
+					"gender":"male",
+					"relationship":"friend",
+					"photo":"https:\/\/is1.4sqi.net\/userpix_thumbs\/KBIMCISGNFH4S0DE.jpg",
+					"tips":{
+						"count":13
+					},
+					"lists":{
+						"groups":[
+							{
+								"type":"created",
+								"count":4,
+								"items":[]
+							}
+						]
+					},
+					"homeCity":"New York, NY",
+					"bio":"",
+					"contact":{
+						"twitter":"tianwei_liu"
+					}
+				},
+				"venue":{
+					"id":"4bd9bfb80115c9b685817880",
+					"name":"Tempo Luxury Condominiums",
+					"contact":{},
+					"location":{
+						"address":"300 E 23rd",
+						"crossStreet":"at 2nd Avenue",
+						"lat":40.737776597022716,
+						"lng":-73.98069865357144,
+						"distance":3404,
+						"city":"New York",
+						"state":"NY",
+						"country":"United States",
+						"cc":"US"
+					},
+					"canonicalUrl":"https:\/\/foursquare.com\/v\/tempo-luxury-condominiums\/4bd9bfb80115c9b685817880",
+					"categories":[
+						{
+							"id":"4bf58dd8d48988d130941735",
+							"name":"Building",
+							"pluralName":"Buildings",
+							"shortName":"Other - Buildings",
+							"icon":"https:\/\/foursquare.com\/img\/categories\/building\/default.png",
+							"parents":[
+								"Professional & Other Places"
+							],
+							"primary":true
+						}
+					],
+					"verified":false,
+					"stats":{
+						"checkinsCount":1351,
+						"usersCount":112,
+						"tipCount":2
+					},
+					"likes":{
+						"count":0,
+						"groups":[]
+					},
+					"beenHere":{
+						"count":0,
+						"marked":false
+					},
+					"specials":[]
+				},
+				"source":{
+					"name":"foursquare for iPhone",
+					"url":"https:\/\/foursquare.com\/download\/#\/iphone"
+				},
+				"distance":3351,
+				"photos":{
+					"count":0,
+					"items":[]
+				}
+			},
+			{
+				"id":"50fb4e53e4b07380aa633016","createdAt":1358646867,"type":"checkin","timeZone":"America\/Chicago","timeZoneOffset":-360,"user":{"id":"543580","firstName":"Tara","lastName":"Trilops","gender":"female","relationship":"friend","photo":"https:\/\/is1.4sqi.net\/userpix_thumbs\/T54RTUQ2AWOYYLTQ.jpg","tips":{"count":20},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"","bio":"","contact":{"twitter":"taratrilops","facebook":"7959158"}},"venue":{"id":"50983a99e4b0385777e2da20","name":"Table, Donkey and Stick","contact":{},"location":{"address":"2728 W Armitage Ave","lat":41.91764246133851,"lng":-87.69617998542277,"distance":1151156,"postalCode":"60647","city":"Chicago","state":"IL","country":"United States","cc":"US"},"canonicalUrl":"https:\/\/foursquare.com\/v\/table-donkey-and-stick\/50983a99e4b0385777e2da20","categories":[{"id":"4bf58dd8d48988d158941735","name":"Swiss Restaurant","pluralName":"Swiss Restaurants","shortName":"Swiss","icon":"https:\/\/foursquare.com\/img\/categories\/food\/swiss.png","parents":["Food"],"primary":true}],"verified":false,"stats":{"checkinsCount":90,"usersCount":81,"tipCount":0},"likes":{"count":0,"groups":[]},"beenHere":{"count":0,"marked":false},"specials":[]},"source":{"name":"foursquare for iPhone","url":"https:\/\/foursquare.com\/download\/#\/iphone"},"distance":1151134,"photos":{"count":0,"items":[]}},{"id":"50fa21aee4b0b74ea5ad3bb0","createdAt":1358569902,"type":"checkin","timeZone":"America\/New_York","timeZoneOffset":-300,"user":{"id":"51426","firstName":"Gabe","lastName":"Reichenbach","gender":"male","relationship":"friend","photo":"https:\/\/is0.4sqi.net\/userpix_thumbs\/N1ZHLMMJYJ0YJQWG.jpg","tips":{"count":0},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"Brooklyn, NY","bio":"","contact":{"phone":"6462507490","email":"greichenbach81@hotmail.com","facebook":"678461192"}},"venue":{"id":"4efbe6797ed1abb672f7ecd2","name":"The Grand Victory","contact":{"phone":"3475296610","formattedPhone":"(347) 529-6610","twitter":"thegrandvictory"},"location":{"address":"245 Grand St","crossStreet":"btwn Driggs & Roebling","lat":40.713515900576255,"lng":-73.95884248285984,"distance":4013,"postalCode":"11211","city":"New York","state":"NY","country":"United States","cc":"US"},"canonicalUrl":"https:\/\/foursquare.com\/v\/the-grand-victory\/4efbe6797ed1abb672f7ecd2","categories":[{"id":"4bf58dd8d48988d116941735","name":"Bar","pluralName":"Bars","shortName":"Bar","icon":"https:\/\/foursquare.com\/img\/categories\/nightlife\/bar.png","parents":["Nightlife Spots"],"primary":true}],"verified":false,"stats":{"checkinsCount":777,"usersCount":572,"tipCount":5},"likes":{"count":0,"groups":[]},"beenHere":{"count":0,"marked":false},"specials":[],"events":{"count":1,"summary":"1 show","items":[{"id":"50e78af0fe1e6e6ed7233c30","name":"Elizabeth Sullivan, City Walls Autumn Falls, Nat Cassidy, Alexis Thomason and 2 more","foreignIds":{"count":1,"items":[{"domain":"songkick.com","id":"15120244"}]},"categories":[{"id":"4e0a4b91bd41eda0d6092f89","name":"Music","pluralName":"Music","shortName":"Music","icon":"https:\/\/foursquare.com\/img\/categories\/arts_entertainment\/musicvenue.png","parents":[],"primary":true}],"startAt":1358899200,"endAt":1358920800,"allDay":false,"timeZone":"America\/New_York","text":"","url":"http:\/\/www.songkick.com\/concerts\/15120244-elizabeth-sullivan-at-grand-victory?utm_source=4436&utm_medium=partner","images":[],"provider":{"name":"songkick","iconUrl":{"prefix":"https:\/\/playfoursquare.s3.amazonaws.com\/events\/images\/partners\/sk\/","sizes":[20,40],"name":"\/logo.png"},"urlText":"more info"},"stats":{"checkinsCount":0,"usersCount":0}}]}},"source":{"name":"foursquare for iPhone","url":"https:\/\/foursquare.com\/download\/#\/iphone"},"distance":4005,"photos":{"count":0,"items":[]}},{"id":"50f73d2ae4b0ebae2d4326e8","createdAt":1358380330,"type":"checkin","timeZone":"America\/New_York","timeZoneOffset":-300,"user":{"id":"1354424","firstName":"Nien","lastName":"Lam","gender":"male","relationship":"friend","photo":"https:\/\/is0.4sqi.net\/userpix_thumbs\/ZAFIUHLH5B3JMLXT.jpg","tips":{"count":0},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"New York, NY","bio":"","contact":{"email":"nienplam@gmail.com","facebook":"754072990"}},"venue":{"id":"3fd66200f964a5207dea1ee3","name":"The Delta Grill","contact":{"phone":"2129560934","formattedPhone":"(212) 956-0934"},"location":{"address":"700 9th Ave.","crossStreet":"at 48th St.","lat":40.76198065788244,"lng":-73.9900246511882,"distance":5495,"postalCode":"10036","city":"New York","state":"NY","country":"United States","cc":"US"},"canonicalUrl":"https:\/\/foursquare.com\/v\/the-delta-grill\/3fd66200f964a5207dea1ee3","categories":[{"id":"4bf58dd8d48988d17a941735","name":"Cajun \/ Creole Restaurant","pluralName":"Cajun \/ Creole Restaurants","shortName":"Cajun \/ Creole","icon":"https:\/\/foursquare.com\/img\/categories\/food\/default.png","parents":["Food"],"primary":true}],"verified":false,"stats":{"checkinsCount":5332,"usersCount":3893,"tipCount":75},"url":"http:\/\/thedeltagrill.com","hasMenu":true,"likes":{"count":0,"groups":[]},"menu":{"type":"foodAndBeverage","url":"https:\/\/foursquare.com\/v\/the-delta-grill\/3fd66200f964a5207dea1ee3\/menu","mobileUrl":"https:\/\/foursquare.com\/v\/3fd66200f964a5207dea1ee3\/device_menu"},"beenHere":{"count":0,"marked":false},"specials":[]},"source":{"name":"foursquare for iPhone","url":"https:\/\/foursquare.com\/download\/#\/iphone"},"distance":5497,"photos":{"count":0,"items":[]}},{"id":"50eef252e4b09038e764e9fe","createdAt":1357836882,"type":"checkin","timeZone":"America\/New_York","timeZoneOffset":-300,"user":{"id":"30522","firstName":"Alberto","lastName":"Ferrer","gender":"male","relationship":"friend","photo":"https:\/\/is0.4sqi.net\/userpix_thumbs\/2HLA4OTVQVQV10YZ.jpg","tips":{"count":2},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"New York, NY","bio":"Marketer. Tech Fiend. Results-Driver. Digital and Direct Fan. Chocolate and Ice Cream Lover. Dog person. Currently at TVP.","contact":{"twitter":"albertoferrer"}},"venue":{"id":"49f5ac81f964a520b16b1fe3","name":"Macchiato Espresso Bar","contact":{"phone":"2128676772","formattedPhone":"(212) 867-6772"},"location":{"address":"141 E 44th St.","crossStreet":"btwn Lexington & 3rd Ave.","lat":40.7523461329262,"lng":-73.97452889871566,"distance":5025,"postalCode":"10017","city":"New York","state":"NY","country":"United States","cc":"US"},"canonicalUrl":"https:\/\/foursquare.com\/v\/macchiato-espresso-bar\/49f5ac81f964a520b16b1fe3","categories":[{"id":"4bf58dd8d48988d1e0931735","name":"Coffee Shop","pluralName":"Coffee Shops","shortName":"Coffee Shop","icon":"https:\/\/foursquare.com\/img\/categories\/food\/coffeeshop.png","parents":["Food"],"primary":true}],"verified":false,"stats":{"checkinsCount":4679,"usersCount":1214,"tipCount":36},"hasMenu":true,"likes":{"count":0,"groups":[]},"menu":{"type":"foodAndBeverage","url":"https:\/\/foursquare.com\/v\/macchiato-espresso-bar\/49f5ac81f964a520b16b1fe3\/menu","mobileUrl":"https:\/\/foursquare.com\/v\/49f5ac81f964a520b16b1fe3\/device_menu"},"beenHere":{"count":0,"marked":false},"specials":[]},"source":{"name":"foursquare for Android","url":"https:\/\/foursquare.com\/download\/#\/android"},"distance":5101,"photos":{"count":0,"items":[]}},{"id":"50ec16e5e4b0941749d7531e","createdAt":1357649637,"type":"checkin","shout":"Rodrigo y Gabriela in HK :)","timeZone":"Asia\/Hong_Kong","timeZoneOffset":480,"user":{"id":"860158","firstName":"Eddie","lastName":"Chan","gender":"male","relationship":"friend","photo":"https:\/\/is1.4sqi.net\/userpix_thumbs\/YXH0KWBKIFGBI2RV.jpg","tips":{"count":3},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"Hong Kong","bio":"","contact":{"phone":"+85262254974","email":"eddie.nyc@gmail.com","twitter":"edznyc","facebook":"640446063"}},"venue":{"id":"4c78c2fe81bca0935d48fb14","name":"KITEC \/ E-max 九龍灣國際展貿中心","contact":{"phone":"+85226202222","formattedPhone":"+852 2620 2222"},"location":{"address":"1 Trademart Dr","lat":22.323968,"lng":114.2039416,"distance":12968734,"city":"Kowloon Bay","state":"Hong Kong","country":"Hong Kong","cc":"HK"},"canonicalUrl":"https:\/\/foursquare.com\/v\/kitec--emax-%E4%B9%9D%E9%BE%8D%E7%81%A3%E5%9C%8B%E9%9A%9B%E5%B1%95%E8%B2%BF%E4%B8%AD%E5%BF%83\/4c78c2fe81bca0935d48fb14","categories":[{"id":"4bf58dd8d48988d1ff931735","name":"Convention Center","pluralName":"Convention Centers","shortName":"Convention Center","icon":"https:\/\/foursquare.com\/img\/categories\/building\/conventioncenter.png","parents":["Professional & Other Places"],"primary":true}],"verified":false,"stats":{"checkinsCount":2538,"usersCount":1196,"tipCount":7},"likes":{"count":0,"groups":[]},"beenHere":{"count":0,"marked":false},"specials":[]},"source":{"name":"foursquare for iPhone","url":"https:\/\/foursquare.com\/download\/#\/iphone"},"distance":12968827,"photos":{"count":1,"items":[{"id":"50ec16ebe4b0888c9ae480ff","createdAt":1357649643,"source":{"name":"foursquare for iPhone","url":"https:\/\/foursquare.com\/download\/#\/iphone"},"url":"https:\/\/is0.4sqi.net\/pix\/860158_lzwvkJJBqiN6Y7oq-HYphhuVrS5V_YSWIMRVsgGhtEc.jpg","sizes":{"count":4,"items":[{"url":"https:\/\/is0.4sqi.net\/pix\/860158_lzwvkJJBqiN6Y7oq-HYphhuVrS5V_YSWIMRVsgGhtEc.jpg","width":960,"height":720},{"url":"https:\/\/is1.4sqi.net\/derived_pix\/860158_lzwvkJJBqiN6Y7oq-HYphhuVrS5V_YSWIMRVsgGhtEc_300x300.jpg","width":300,"height":300},{"url":"https:\/\/is1.4sqi.net\/derived_pix\/860158_lzwvkJJBqiN6Y7oq-HYphhuVrS5V_YSWIMRVsgGhtEc_100x100.jpg","width":100,"height":100},{"url":"https:\/\/is1.4sqi.net\/derived_pix\/860158_lzwvkJJBqiN6Y7oq-HYphhuVrS5V_YSWIMRVsgGhtEc_36x36.jpg","width":36,"height":36}]},"user":{"id":"860158","firstName":"Eddie","lastName":"Chan","gender":"male","relationship":"friend","photo":"https:\/\/is1.4sqi.net\/userpix_thumbs\/YXH0KWBKIFGBI2RV.jpg","tips":{"count":3},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"Hong Kong","bio":"","contact":{"phone":"+85262254974","email":"eddie.nyc@gmail.com","twitter":"edznyc","facebook":"640446063"}},"visibility":"public"}]}},{"id":"50e4c11ce4b0fa936b62dce3","createdAt":1357168924,"type":"checkin","timeZone":"America\/Los_Angeles","timeZoneOffset":-480,"user":{"id":"57870","firstName":"Sebastian","lastName":"Mawira","gender":"male","relationship":"friend","photo":"https:\/\/is0.4sqi.net\/userpix_thumbs\/VGVJHRFBIHJFDI3L.jpg","tips":{"count":11},"lists":{"groups":[{"type":"created","count":2,"items":[]}]},"homeCity":"New York, NY","bio":"","contact":{}},"venue":{"id":"4d696e0967a8f04d95940dbe","name":"Studio 800 Hair Studio","contact":{},"location":{"address":"800 Geary","crossStreet":"Hyde","lat":37.78624,"lng":-122.416499,"distance":4132949,"postalCode":"94109","city":"San Francisco","state":"California","country":"United States","cc":"US"},"canonicalUrl":"https:\/\/foursquare.com\/v\/studio-800-hair-studio\/4d696e0967a8f04d95940dbe","categories":[],"verified":false,"stats":{"checkinsCount":22,"usersCount":10,"tipCount":0},"likes":{"count":0,"groups":[]},"beenHere":{"count":0,"marked":false},"specials":[]},"source":{"name":"foursquare for iPhone","url":"https:\/\/foursquare.com\/download\/#\/iphone"},"distance":4133373,"photos":{"count":0,"items":[]}},{"id":"50e22c54e4b01580b1f95340","createdAt":1356999764,"type":"checkin","timeZone":"America\/Chicago","timeZoneOffset":-360,"user":{"id":"277006","firstName":"Reshma","lastName":"Taufiq","gender":"female","relationship":"friend","photo":"https:\/\/is0.4sqi.net\/userpix_thumbs\/ETJTRXLG13B1Y1AD.jpg","tips":{"count":9},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"Dallas, TX","bio":"","contact":{"phone":"6463457374","email":"rtaufiq@hotmail.com","twitter":"reshmatauf","facebook":"694345359"}},"venue":{"id":"44d9ff60f964a5208b361fe3","name":"Dallas\/Fort Worth International Airport (DFW)","contact":{"phone":"9729738888","formattedPhone":"(972) 973-8888","twitter":"dfwairport"},"location":{"address":"3200 E Airfield Dr","lat":32.89803818160521,"lng":-97.04086303710938,"distance":2221248,"postalCode":"76051","city":"DFW Airport","state":"TX","country":"United States","cc":"US"},"canonicalUrl":"https:\/\/foursquare.com\/v\/dallasfort-worth-international-airport-dfw\/44d9ff60f964a5208b361fe3","categories":[{"id":"4bf58dd8d48988d1ed931735","name":"Airport","pluralName":"Airports","shortName":"Airport","icon":"https:\/\/foursquare.com\/img\/categories\/travel\/airport.png","parents":["Travel & Transport"],"primary":true}],"verified":true,"stats":{"checkinsCount":567183,"usersCount":180947,"tipCount":1383},"url":"http:\/\/www.dfwairport.com","likes":{"count":0,"groups":[]},"beenHere":{"count":0,"marked":false},"specials":[]},"source":{"name":"foursquare for Android","url":"https:\/\/foursquare.com\/download\/#\/android"},"distance":2218906,"photos":{"count":0,"items":[]}},{"id":"50535d97e4b07ab78c4d4e0d","createdAt":1347640727,"type":"checkin","shout":"Baby@Itapevi","timeZone":"America\/Sao_Paulo","timeZoneOffset":-180,"user":{"id":"205679","firstName":"IN","lastName":"Hsieh","gender":"male","relationship":"friend","photo":"https:\/\/is1.4sqi.net\/userpix_thumbs\/RIHNFQHAHUDPOKZM.jpg","tips":{"count":6},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"Sao Paulo, Brazil","bio":"","contact":{"email":"in@uol.com.br","twitter":"inhsieh","facebook":"505643976"}},"venue":{"id":"4fe37922e4b083930c32b05b","name":"Baby.com.br CD","contact":{},"location":{"lat":-23.52446877604298,"lng":-46.93518117685273,"distance":7680216,"country":"Brazil","cc":"BR"},"canonicalUrl":"https:\/\/foursquare.com\/v\/babycombr-cd\/4fe37922e4b083930c32b05b","categories":[{"id":"4bf58dd8d48988d130941735","name":"Building","pluralName":"Buildings","shortName":"Other - Buildings","icon":"https:\/\/foursquare.com\/img\/categories\/building\/default.png","parents":["Professional & Other Places"],"primary":true}],"verified":false,"stats":{"checkinsCount":18,"usersCount":16,"tipCount":1},"likes":{"count":0,"groups":[]},"beenHere":{"count":0,"marked":false},"specials":[]},"source":{"name":"foursquare for iPhone","url":"https:\/\/foursquare.com\/download\/#\/iphone"},"distance":7680198,"photos":{"count":0,"items":[]}},{"id":"50171abae4b02c99f8f8ae07","createdAt":1343691450,"type":"checkin","timeZone":"America\/New_York","timeZoneOffset":-240,"user":{"id":"842794","firstName":"MinWoo","lastName":"Bae","gender":"male","relationship":"friend","photo":"https:\/\/is1.4sqi.net\/userpix_thumbs\/5AQJXT0Y4RIIXIG1.jpg","tips":{"count":0},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"New York, NY","bio":"","contact":{"phone":"3476841911","email":"bmw31023@gmail.com","twitter":"minubae","facebook":"551212145"}},"venue":{"id":"4e2315c5ae6015b212b66a03","name":"Prime & Beyond","contact":{"phone":"2125050033","formattedPhone":"(212) 505-0033","twitter":"primeandbeyond"},"location":{"address":"90 E. 10th St.","crossStreet":"btw 3rd & 4th Ave","lat":40.730912,"lng":-73.989605,"distance":2338,"postalCode":"10003","city":"New York","state":"NY","country":"United States","cc":"US"},"canonicalUrl":"https:\/\/foursquare.com\/v\/prime--beyond\/4e2315c5ae6015b212b66a03","categories":[{"id":"4bf58dd8d48988d1cc941735","name":"Steakhouse","pluralName":"Steakhouses","shortName":"Steakhouse","icon":"https:\/\/foursquare.com\/img\/categories\/food\/steakhouse.png","parents":["Food"],"primary":true}],"verified":true,"stats":{"checkinsCount":588,"usersCount":454,"tipCount":14},"url":"http:\/\/primeandbeyond.com","hasMenu":true,"likes":{"count":0,"groups":[]},"reservations":{"url":"http:\/\/www.opentable.com\/single.aspx?rid=71467&ref=1040"},"menu":{"type":"foodAndBeverage","url":"https:\/\/foursquare.com\/v\/prime--beyond\/4e2315c5ae6015b212b66a03\/menu","mobileUrl":"https:\/\/foursquare.com\/v\/4e2315c5ae6015b212b66a03\/device_menu"},"beenHere":{"count":0,"marked":false},"specials":[]},"source":{"name":"foursquare for iPhone","url":"https:\/\/foursquare.com\/download\/#\/iphone"},"distance":2404,"photos":{"count":0,"items":[]}},{"id":"4fdbd7cfe4b0e598b5aa9983","createdAt":1339807695,"type":"checkin","timeZone":"America\/New_York","timeZoneOffset":-240,"user":{"id":"2549","firstName":"Ian","lastName":"Cleary","gender":"male","relationship":"friend","photo":"https:\/\/is0.4sqi.net\/userpix_thumbs\/SDJ11GZQDYTPS0QL.jpg","tips":{"count":4},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"New York, NY","bio":"","contact":{"phone":"2076325957","email":"icleary@gmail.com","facebook":"607392779"}},"venue":{"id":"4ec9b936775bf65c061f760e","name":"Walter's","contact":{"phone":"7184887800","formattedPhone":"(718) 488-7800"},"location":{"address":"166 DeKalb Ave","crossStreet":"Cumberland St","lat":40.68956900930257,"lng":-73.97313863039017,"distance":3923,"postalCode":"11217","city":"Brooklyn","state":"NY","country":"United States","cc":"US"},"canonicalUrl":"https:\/\/foursquare.com\/v\/walters\/4ec9b936775bf65c061f760e","categories":[{"id":"4bf58dd8d48988d157941735","name":"New American Restaurant","pluralName":"New American Restaurants","shortName":"New American","icon":"https:\/\/foursquare.com\/img\/categories\/food\/default.png","parents":["Food"],"primary":true}],"verified":false,"stats":{"checkinsCount":2251,"usersCount":1353,"tipCount":38},"url":"http:\/\/www.waltersbrooklyn.com","likes":{"count":0,"groups":[]},"beenHere":{"count":0,"marked":false},"specials":[]},"source":{"name":"Foursquare for WP7","url":"http:\/\/www.windowsphone.com\/en-US\/apps\/26cf3302-469f-e011-986b-78e7d1fa76f8"},"distance":3892,"photos":{"count":0,"items":[]}},{"id":"4f89b22ee4b0abaa02e9f50d","createdAt":1334424110,"type":"checkin","timeZone":"America\/New_York","timeZoneOffset":-240,"user":{"id":"29418","firstName":"Marz","lastName":"1","gender":"male","relationship":"friend","photo":"https:\/\/is1.4sqi.net\/userpix_thumbs\/4a9a9b02d4d6c.png","tips":{"count":7},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"Brooklyn, NY","bio":"","contact":{"twitter":"insomniactivist","facebook":"625434106"}},"venue":{"id":"4a6bb91ef964a520c1cf1fe3","name":"Dockside Bar and Grill","contact":{"phone":"6317257100","formattedPhone":"(631) 725-7100"},"location":{"address":"26 Bay St.","lat":41.001319,"lng":-72.292649,"distance":147783,"postalCode":"11963","city":"Sag Harbor","state":"NY","country":"United States","cc":"US"},"canonicalUrl":"https:\/\/foursquare.com\/v\/dockside-bar-and-grill\/4a6bb91ef964a520c1cf1fe3","categories":[{"id":"4bf58dd8d48988d14e941735","name":"American Restaurant","pluralName":"American Restaurants","shortName":"American","icon":"https:\/\/foursquare.com\/img\/categories\/food\/default.png","parents":["Food"],"primary":true}],"verified":false,"stats":{"checkinsCount":569,"usersCount":386,"tipCount":12},"hasMenu":true,"likes":{"count":0,"groups":[]},"menu":{"type":"foodAndBeverage","url":"https:\/\/foursquare.com\/v\/dockside-bar-and-grill\/4a6bb91ef964a520c1cf1fe3\/menu","mobileUrl":"https:\/\/foursquare.com\/v\/4a6bb91ef964a520c1cf1fe3\/device_menu"},"beenHere":{"count":0,"marked":false},"specials":[]},"source":{"name":"foursquare for iPhone","url":"https:\/\/foursquare.com\/download\/#\/iphone"},"distance":147778,"photos":{"count":0,"items":[]}},{"id":"4c951abc94a0236a71159312","createdAt":1284840124,"type":"checkin","timeZone":"America\/New_York","timeZoneOffset":-240,"user":{"id":"2015880","firstName":"julio","lastName":"terra","gender":"male","relationship":"self","photo":"https:\/\/foursquare.com\/img\/blank_boy.png","tips":{"count":0},"lists":{"groups":[{"type":"created","count":1,"items":[]}]},"homeCity":"Brooklyn, NY","bio":"","contact":{"email":"julioterra@gmail.com"}},"venue":{"id":"42a39200f964a520df241fe3","name":"Asia Society","contact":{"phone":"2127941332","formattedPhone":"(212) 794-1332","twitter":"asiasociety"},"location":{"address":"725 Park Ave.","crossStreet":"at E 70th St.","lat":40.7697999379072,"lng":-73.9645765238531,"distance":7123,"postalCode":"10021","city":"New York","state":"NY","country":"United States","cc":"US"},"canonicalUrl":"https:\/\/foursquare.com\/v\/asia-society\/42a39200f964a520df241fe3","categories":[{"id":"4bf58dd8d48988d18f941735","name":"Art Museum","pluralName":"Art Museums","shortName":"Art Museum","icon":"https:\/\/foursquare.com\/img\/categories\/arts_entertainment\/museum_art.png","parents":["Arts & Entertainment","Museums"],"primary":true}],"verified":true,"stats":{"checkinsCount":2493,"usersCount":1579,"tipCount":21},"url":"http:\/\/asiasociety.org\/ny","likes":{"count":0,"groups":[]},"beenHere":{"count":1,"marked":true},"specials":[],"listed":{"groups":[{"type":"dones","count":1,"items":[]}]}},"distance":7269,"photos":{"count":0,"items":[]}}]}}

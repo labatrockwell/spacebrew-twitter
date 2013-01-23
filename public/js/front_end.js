@@ -50,7 +50,7 @@ var Control = {};
 	/**
 	 * Control.Main constructor for the app controller. It initializes the view and model, registers the controller
 	 * 		with the view, so that it can handle appropriate callbacks .
-	 * @param  {View.Web} view  View object that controls the display of tweets and query submissions
+	 * @param  {View.Web} view  View object that controls the display of content and query submissions
 	 * @param  {Model} model Model object that holds the configuration settings, and live data
 	 * @return {Control.Main}	Returns an instance of the app controller.
 	 */
@@ -90,7 +90,7 @@ var Control = {};
 	Control.Main.prototype = {
 		constructor: Control.Main,	// link to constructor
 		initialized: false,			// flag that identifies if view has been initialized
-		views: [],					// link to view, where tweets are displayed and queries are submitted
+		views: [],					// link to view, where content is displayed and queries are submitted
 		model: {},					// link to model, which holds configuration and live data
 		interval: {},				// interval object that calls the query method repeatedly
 
@@ -141,34 +141,32 @@ var Control = {};
 					console.log("[Controller:_query:success] data test ", self.model.data);
 					// if (jData.query !== self.model.data.query.text) return;
 
-					console.log("[Controller:_query:success] tweets received ", jData.list);
+					console.log("[Controller:_query:success] data received received ", jData.list);
 
 		    		// loop through the new tweet array to add each one to our model 
 				    for (var i = 0; i < jData.list.length; i++) {
-		    	    	if (jData.list[i].user && jData.list[i].text && jData.list[i].created_at ) {
-							for (var content in this.model.data.output) {
-			    	    		self.model.data.output[content].list.unshift(jData.list[i]);
-			    	    	}
+						for (var content in this.model.data.output) {
+		    	    		self.model.data.output[content].list.unshift(jData.list[i]);
 		    	    	}
 		    		}
 
 		    		// if our model array has grown to large will shrink it back down
-    	    		if (self.model.data.output.tweets.list > maxLen) {
-						for (var content in this.model.data.output) {
+					for (var content in this.model.data.output) {
+			    		if (self.model.data.output[content].list > maxLen) {
 	    		    		self.model.data.output[content].list = self.model.data.output[content].list.slice(0,maxLen);    			
 	    		    	}
     	    		}
 
-    	    		// load the tweets to the page
+    	    		// load the content to the page
     	    		for (var j = 0; j < self.views.length; j += 1) {
 					    if (self.views[j]["load"]) {
-						    console.log("loading tweets to views ", j)	    			
+						    console.log("loading content to views ", j)	    			
 					    	self.views[j]["load"]();
 					    }
     	    		}
 
 					for (var content in this.model.data.output) {
-	    	    		// update the latest variable if there are tweets in the queu				
+	    	    		// update the latest variable if there are new content items in the queu				
 	    	    		if (self.model.data.output[content].list > 0) {
 							self.model.data.output[content].latest = self.model.data.output[content].list[0].id;					
 	    	    		}
@@ -349,14 +347,14 @@ View.Web = function (config) {
 			for (var type in this.model.config.output) {
 
 				// create the wrapper for each template type
-				divSettings = { class: type };
+				divSettings = { class: type + " content_elements" };
 				$typeDiv = $('<div/>', divSettings).appendTo('#templates');
 
 				// loop through each element of the current template
 				for (var attr in this.model.config.output[type]) {
 
 					// create new span for each element 
-					divSettings = { class: attr };
+					divSettings = { class: attr + " content_element_attr"};
 					$groupDiv = $('<div/>', divSettings).appendTo($typeDiv);
 				}
 			}			
@@ -375,7 +373,7 @@ View.Web = function (config) {
 		},
 
 		/**
-		 * load Method that loads tweets to the browser window. It uses the tweet template to create
+		 * load Method that loads content to the browser window. It uses the tweet template to create
 		 * 		the appropriate html objects.
 		 */
 		load: function() {
@@ -407,11 +405,11 @@ View.Web = function (config) {
 
 			}
 
-			$("#content .tweets").remove();        
-
 			for (var content in this.model.data.output) {
+				$("#content .content_elements").remove();        
+
 				for (var element in this.model.data.output[content].list) {
-					$newEle = $("#templates .tweets").clone();
+					$newEle = $("#templates .content_elements").clone();
 					$newEle.attr( {id: element} );
 					for (var attr in this.model.data.output[content].list[element]) {
 						var cur_val = this.model.data.output[content].list[element][attr];
@@ -424,7 +422,7 @@ View.Web = function (config) {
 		},
 
 		/**
-		 * clear Method that clears the list of tweets in the browser.
+		 * clear Method that clears the list of content elements from the browser.
 		 */
 		clear: function() {
 			$("#content .tweet").remove();        
@@ -475,6 +473,8 @@ View.Spacebrew = function (config) {
 			this.sb.addSubscribe( subs[i].name, subs[i].type );		
 		}
 		this.sb.onStringMessage = this.onString.bind(this);
+		this.sb.onRangeMessage = this.onRange.bind(this);
+		this.sb.onBooleanMessage = this.onBoolean.bind(this);
 		this.sb.onOpen = this.onOpen.bind(this);
 		this.sb.onClose = this.onClose.bind(this);
 		this.sb.connect();
@@ -492,6 +492,7 @@ View.Spacebrew = function (config) {
 		connected: false,		// flag that identifies if view has been initialized
 		controller: undefined,
 		submitFuncName: "",
+		callbacks: {},
 
 		/**
 		 * registerControler Method that is called by the app controller to register the method used to submit
@@ -504,14 +505,42 @@ View.Spacebrew = function (config) {
 			this.submitFuncName = name || "submit";
 		},
 
+		addCallback: function(eventName, cbName, cbContext ) {
+			if (typeof cbContext[cbName] === "function") {
+				this.callbacks[eventName] = cbContext[cbName].bind(cbContext);
+				console.log ("[ViewSpacebrew:addCallback] callback " + cbName + " added successufully to event " + eventName)
+			}
+			else {
+				return false; 
+			}
+		},
+
 		/**
 		 * onString function that processes string messages received from spacebrew. It converts the string into a query that 
-		 * 		is used as a filter to select tweets to be forwarded to spacebrew. 	
+		 * 		is used as a query filter for the webservice. 	
 		 * @param  {String} inlet Name of the subcription feed channel where the message was received
 		 * @param  {String} msg   The message itself
 		 */
 		onString: function (inlet, msg) {
 			if (debug) console.log("[onString] got string msg: " + msg);
+			if (this.callbacks["onString"]) {
+				this.callbacks["onString"](inlet, msg);
+			}
+		},
+
+
+		onRange: function (inlet, msg) {
+			if (debug) console.log("[onRange] got string msg: " + msg);
+			if (this.callbacks["onRange"]) {
+				this.callbacks["onRange"](inlet, msg);
+			}
+		},
+
+		onBoolean: function (inlet, msg) {
+			if (debug) console.log("[onBoolean] got string msg: " + msg);
+			if (this.callbacks["onBoolean"]) {
+				this.callbacks["onBoolean"](inlet, msg);
+			}
 		},
 
 		/**
@@ -520,6 +549,9 @@ View.Spacebrew = function (config) {
 		onOpen: function () {
 			this.connected = true;
 			if (debug) console.log("[onOpen] spacebrew connection established");
+			if (this.callbacks["onOpen"]) {
+				this.callbacks["onOpen"]();
+			}
 		},
 
 		/**
@@ -528,22 +560,24 @@ View.Spacebrew = function (config) {
 		onClose: function () {
 			this.connected = false;
 			if (debug) console.log("[onClose] spacebrew connection closed");
+			if (this.callbacks["onClose"]) {
+				this.callbacks["onClose"]();
+			}
 		},
 
 		load: function() {
 			for (var content in this.model.data.output) {
 				var content_list = this.model.data.output[content].list;
 				for (var i = content_list.length - 1; i >= 0; i--) {
-					// if this is a tweet that has not been sent yet, then send it
+
+					// if this is a content element that has not been sent yet, then send it
 					if (content_list[i].id > this.model.data.output[content].latest) {
 						console.log("[Spacebrew:load] sending to spacbrew data ", content_list[i]);
 
-						// prep and then loop through each publication feed to send message
-						curTweet = content_list[i];					// load current tweet
-						vals = [JSON.stringify(curTweet), curTweet.text, "true"];	// set the values for each publication feed
-						for (var j in this.model.config.sb.pubs) {							
-							this.sb.send( this.model.config.sb.pubs[j].name, this.model.config.sb.pubs[j].type, vals[j] );                            
-						}				    	
+						// callback method handles how content is sent to spacebrew
+						if (this.callbacks["load"]) {
+							this.callbacks["load"](content_list[i], this.model.config.sb.pubs, this.sb);
+						}
 					}
 				}
 			}

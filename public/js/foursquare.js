@@ -5,14 +5,13 @@ var app = {}
 			"description": unescape(getQueryString("description")) || "web app that forwards foursquare check-ins to spacebrew",
 			"pubs": [
 			    { 
-			    	"name": 'people', 	
-			    	"type": 'string' 
+			    	"name": 'people' 	
+			    	, "type": 'string' 
 			    }
 			],
 			"subs": [
 			    { 
-			    	"name": 'lat, long', 
-			    	"type": 'string' 
+			    	"name": 'lat, long'
 			    } 
 			]
 		},
@@ -29,7 +28,18 @@ var app = {}
 		},
 		"output": {
 			"check-ins": {
+				"address": "",
+				"checkinsCount": "",
+				"city": "",
+				"country": "",
+				"createdAt": "",
+				"id": "",
+				"lat": "",
+				"long": "",
+				"photo": "",
+				"state": "",
 				"user": "",
+				"venue": ""
 			}
 		},
 

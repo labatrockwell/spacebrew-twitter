@@ -212,14 +212,15 @@ module.exports = {
             //     }
             // }
 
-            // // set the ajax_req flag to true and create the callback function
-            this.model.clients[queryJson.id].reply = function(data) {
-            //     console.log("[this.model.clients[queryJson.id].reply] callback method: ", data);
-            //     res.end(data);                
-            }
-
             // submit the query and client id to the query twitter app
         }
+
+        // // set the ajax_req flag to true and create the callback function
+        this.model.clients[queryJson.id].reply = function(data) {
+            console.log("[this.model.clients[queryJson.id].reply] callback method: ", data);
+            res.end(data);                
+        }
+
         this.queryTemboo(queryJson.id, "reply");
     },
 
@@ -262,37 +263,55 @@ module.exports = {
          * @param  {Temboo Results Obect} results Results from Temboo Twitter service query
          */
         var successCallback = function(results) {
-            var tResults = JSON.parse(results.get_Response());
+            var tResults = JSON.parse(results.get_Response())
+                , checkIns = []
+                , newCheckIn = {} 
+                ;
 
-            console.log( "[successCallback] results received - string: ", results.get_Response() );
-            console.log( "[successCallback] results received - json: ", tResults );
+            // console.log( "[successCallback] results received - string: ", results.get_Response() );
+            console.log( "[successCallback:queryTemboo] results received - json: ", tResults );
 
-            // if (tResults.query && tResults.results) {
-            //     console.log( "[successCallback] results received for query: " + tResults.query );
+            if (tResults["response"]) {
+                if (tResults.response["recent"]) {
+                    console.log( "[successCallback:queryTemboo] results received");
+                    self.model.clients[clientId].results = tResults.response["recent"];
+                        for(var i = tResults.response["recent"].length - 1; i >= 0; i--) {
+                            if (self.model.clients[clientId].results[i].createdAt > self.model.clients[clientId].afterTimeStamp) {
+                            newCheckIn = {
 
-            //     self.model.clients[clientId].results = tResults.results;
-            //     for(var i = self.model.clients[clientId].results.length - 1; i >= 0; i--) {
-            //         if (self.model.clients[clientId].results[i].id > self.model.clients[clientId].afterTimeStamp) {
-            //             newTweet = {
-            //                 "user": self.model.clients[clientId].results[i].from_user,
-            //                 "text": self.model.clients[clientId].results[i].text,
-            //                 "created_at": self.model.clients[clientId].results[i].created_at,
-            //                 "id": self.model.clients[clientId].results[i].id
-            //             };
-            //             newTweets.push(newTweet);
+                                "user": tResults.response["recent"][i].user.firstName + " " + tResults.response["recent"][i].user.lastName,
+                                "photo": tResults.response["recent"][i].user.photo,
+                                "venue": tResults.response["recent"][i].venue.name,
+                                "address": tResults.response["recent"][i].venue.location.address,
+                                "lat": tResults.response["recent"][i].venue.location.lat,
+                                "long": tResults.response["recent"][i].venue.location.lng,
+                                "city": tResults.response["recent"][i].venue.location.city,
+                                "state": tResults.response["recent"][i].venue.location.state,
+                                "country": tResults.response["recent"][i].venue.location.country,
+                                "checkinsCount": tResults.response["recent"][i].venue.stats.checkinsCount,
+                                "createdAt": tResults.response["recent"][i].createdAt,
+                                // "source": tResults.response["recent"][i].source.name,
+                                "id": tResults.response["recent"][i].id
+                            };
+                            console.log( "[successCallback:queryTemboo] element " + i, newCheckIn);
 
-            //             // update the id of the most recent message
-            //             self.model.clients[clientId].afterTimeStamp = self.model.clients[clientId].results[i].id;
-            //         }
-            //     }
+                            checkIns.push(newCheckIn);
 
-            //     console.log("[queryTemboo] number of new tweets: ", newTweets.length);
-            //     if (newTweets.length > 0) console.log("[queryTemboo] list of new tweets:\n", newTweets);
-            //     if (self.model.clients[clientId][callbackName]) {
-            //         var reply_obj = {"tweets" : newTweets, "query": self.model.clients[clientId].query };
-            //         self.model.clients[clientId][callbackName](JSON.stringify(reply_obj));
-            //     }
-            // }
+                            // update the id of the most recent message
+                            self.model.clients[clientId].afterTimeStamp = self.model.clients[clientId].results[i].createdAt;
+                        }
+                    }
+
+                }
+
+                // call appropriate response methods for client that made request
+                console.log("[successCallback:queryTemboo] new checkIns: ", JSON.stringify(checkIns));
+                if (self.model.clients[clientId][callbackName]) {
+                    var reply_obj = { "list" : checkIns };
+                    console.log("\n[successCallback:queryTemboo] sending json response: ", JSON.stringify(reply_obj));
+                    self.model.clients[clientId][callbackName](JSON.stringify(reply_obj));
+                }
+            }
         };
 
         // Run the choreo, passing the success and error callback handlers
