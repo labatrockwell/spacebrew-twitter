@@ -468,9 +468,11 @@ View.Spacebrew = function (config) {
 
 		for (var i = 0; i < pubs.length; i += 1) {
 			this.sb.addPublish( pubs[i].name, pubs[i].type );		
+			console.log("[View.Spacebrew] adding pub " + pubs[i].name + " type " + pubs[i].type);
 		}
 		for (var i = 0; i < subs.length; i += 1) {
 			this.sb.addSubscribe( subs[i].name, subs[i].type );		
+			console.log("[View.Spacebrew] adding sub " + pubs[i].name + " type " + pubs[i].type);
 		}
 		this.sb.onStringMessage = this.onString.bind(this);
 		this.sb.onRangeMessage = this.onRange.bind(this);

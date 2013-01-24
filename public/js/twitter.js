@@ -48,7 +48,7 @@ var app = {}
 		"query_path" : "/twitter/search"
 	};
 
- function sbLoadTweet(curTweet, pubs, sb) {
+function sbLoadTweet(curTweet, pubs, sb) {
 	vals = [JSON.stringify(curTweet), curTweet.text, "true"];	// set the values for each publication feed
 	for (var j in pubs) {							
 		sb.send( pubs[j].name, pubs[j].type, vals[j] );                            
