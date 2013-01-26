@@ -112,7 +112,6 @@ var Control = {};
 
 			if (attr_avail && !data_avail) return;
 
-			// if (this.model.data.input.required.query.text === "") return;
 			if (clientId == -1) return;
 
 			var query = { "id": 	clientId 
@@ -160,14 +159,15 @@ var Control = {};
     	    		// load the content to the page
     	    		for (var j = 0; j < self.views.length; j += 1) {
 					    if (self.views[j]["load"]) {
-						    console.log("loading content to views ", j)	    			
+						    console.log("[Controller:_query:success] loading content to views ", j)	    			
 					    	self.views[j]["load"]();
 					    }
     	    		}
 
 					for (var content in this.model.data.output) {
 	    	    		// update the latest variable if there are new content items in the queu				
-	    	    		if (self.model.data.output[content].list > 0) {
+	    	    		if (self.model.data.output[content].list.length > 0) {
+						    console.log("[Controller:_query:success] update the latest id to ", self.model.data.output[content].list[0].id)	    			
 							self.model.data.output[content].latest = self.model.data.output[content].list[0].id;					
 	    	    		}
 	    	    	}
@@ -462,6 +462,7 @@ View.Spacebrew = function (config) {
 		if (config["debug"]) this.debug = config["debug"] || false;
 
 		this.sb = new Spacebrew.Client(undefined, this.model.config.sb.name, this.model.config.sb.description);
+		// console.log("[View.Spacebrew] spacebrew client at " +  + " name " + this.model.config.sb.name);
 
 		var pubs = this.model.config.sb.pubs, 
 			subs = this.model.config.sb.subs;
@@ -508,7 +509,9 @@ View.Spacebrew = function (config) {
 		},
 
 		addCallback: function(eventName, cbName, cbContext ) {
-			if (typeof cbContext[cbName] === "function") {
+			console.log ("[ViewSpacebrew:addCallback] trying to add " + cbName + " to event " + eventName)
+			console.log ("[ViewSpacebrew:addCallback] type of cbName ", typeof cbContext[cbName])
+			if ((typeof cbContext[cbName]) === "function") {
 				this.callbacks[eventName] = cbContext[cbName].bind(cbContext);
 				console.log ("[ViewSpacebrew:addCallback] callback " + cbName + " added successufully to event " + eventName)
 			}
@@ -568,16 +571,22 @@ View.Spacebrew = function (config) {
 		},
 
 		load: function() {
+			console.log("[Spacebrew:load] load method called ");
 			for (var content in this.model.data.output) {
+				console.log("[Spacebrew:load] this.model.data.output ", content);
 				var content_list = this.model.data.output[content].list;
 				for (var i = content_list.length - 1; i >= 0; i--) {
+					console.log("[Spacebrew:load] this.model.data.output[content]", i);
+					console.log("[Spacebrew:load] this.model.data.output[content].id", content_list[i].id);
+					console.log("[Spacebrew:load] this.model.data.output[content].latest", this.model.data.output[content].latest);
 
 					// if this is a content element that has not been sent yet, then send it
 					if (content_list[i].id > this.model.data.output[content].latest) {
-						console.log("[Spacebrew:load] sending to spacbrew data ", content_list[i]);
+						console.log("[Spacebrew:load] id is higher than latest");
 
 						// callback method handles how content is sent to spacebrew
 						if (this.callbacks["load"]) {
+							console.log("[Spacebrew:load] this.callbacks['load']", this.callbacks["load"]);
 							this.callbacks["load"](content_list[i], this.model.config.sb.pubs, this.sb);
 						}
 					}

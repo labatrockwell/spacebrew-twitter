@@ -1,7 +1,7 @@
 var app = {}
 	, config = {
 		"sb": {
-			"name": unescape(getQueryString("name")) || "space_tweets_front",
+			"name": unescape(getQueryString("name")) ||  "space_tweets_front",
 			"description": unescape(getQueryString("description")) || "web app that forwards tweets to spacebrew",
 			"pubs": [
 			    { 

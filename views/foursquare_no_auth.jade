@@ -1,22 +1,14 @@
 extend layout
 
 block query_bar
-  .required
-    h1.title  
-    input.fsLogIn(type="button", name="submit query", value="Log-in to Foursquare") 
+	script(src='/js/foursquare.js')
+
+	.required
+		h1.title  
+		input#fsLogIn(type="button", name="submit query", value="Log-in to Foursquare") 
  
 block query_results
-  .header
-    h1 You need to start by logging into your Foursquare account.
-    h2 Then you can start forwarding check-ins near by to Spacebrew.
-  #content
-
-block query_item
-    .tweet 
-      span.user
-      | : 
-      span.text
-      | [
-      span.created_at
-      |]
-
+	.header
+		div.required You need to start by logging into your Foursquare account.
+		div.optional Then you can start forwarding check-ins near by to Spacebrew.
+	#content

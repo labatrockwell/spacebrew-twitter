@@ -12,9 +12,9 @@ module.exports = {
             "response_type" : "",
             "request_token_url" : "",
             "grant_type" : "",
-
             "code" : "",
-            "access_token" : ""
+            "access_token" : "",
+            "query_str" : ""
         }
     },
     session: {},
@@ -49,7 +49,6 @@ module.exports = {
             "geo": {
                 "lat": 0,
                 "long": 0,
-                "radius": 0,
                 "available": "false"
             },
             "auth": {
@@ -70,21 +69,30 @@ module.exports = {
      */
     handleAppRequest: function (req, res) {
         var urlReq = require('url').parse(req.url, true)    // get the full URL request
-            , client_id = urlReq.query['client_id'] || -1;
+            , client_id = urlReq.query['client_id'] || -1
+            , server = urlReq.query['server'] || "localhost"
+            , name = urlReq.query['name'] || "empty"
+            , description = urlReq.query['description'] || "empty"
+            , client
+            ;
 
-        console.log("[handleAppRequest] received app request ", urlReq)
+        console.log("[handleAppRequest] received app request query ", urlReq.query)
 
+        // handle non-authorized clients
+        if ((client_id == -1) || !this.model.clients[client_id]) {
+            client = this.newClient();
+            console.log("[handleAppRequest] creating new client with id ", client.id)
 
-        if (client_id == -1) {
             res.render('foursquare_no_auth',
                 { 
                     title : "Foursquare in Space"           
                     , subTitle : "forwarding check-ins to spacebrew"
-                    , clientId : client_id
+                    , clientId : client.id
                 }
             )                                
         }
 
+        // handle authorized clients
         else {
             res.render('foursquare',
                 { 
@@ -103,10 +111,27 @@ module.exports = {
      */
     handleAuthenticationReq: function (req, res) {
         var urlReq = require('url').parse(req.url, true)    // get the full URL request
+            , client_id = urlReq.query['client_id'] || -1
+            , server = urlReq.query['server'] || undefined
+            , name = urlReq.query['name'] || undefined
+            , description = urlReq.query['description'] || undefined
+            , query_str = "" 
             , auth_req = ""
             , self = this
-            , client = self.newClient()
+            , client = undefined
             ; 
+
+        console.log("[handleAuthenticationReq] received app request query ", urlReq.query)
+
+        if (client_id > 0) client = this.model.clients[client_id];
+        else client = this.newClient();
+        query_str = "client_id=" + client_id 
+
+        if (server) query_str += "server=" + server        
+        if (name) query_str += "&name=" + name;
+        if (description) query_str += "&description=" + description;
+
+        this.model.clients[client.id].auth.query_str = query_str;
 
         console.log("[handleAuthenticationReq] received auth request ", urlReq)
 
@@ -120,11 +145,11 @@ module.exports = {
 
             // prepare the access token request url
             auth_req = this.model.auth.request_token_url
-                    + "?client_id=" + this.model.auth.client_id
-                    + "&client_secret=" + this.model.auth.client_secret
-                    + "&grant_type=" + this.model.auth.grant_type
-                    + "&redirect_uri=" + this.model.auth.redirect_url
-                    + "&code=" + this.model.clients[client.id].auth.code;
+                    + "?client_id=" + escape(this.model.auth.client_id)
+                    + "&client_secret=" + escape(this.model.auth.client_secret)
+                    + "&grant_type=" + escape(this.model.auth.grant_type)
+                    + "&redirect_uri=" + escape(this.model.auth.redirect_url + "?" + query_str)
+                    + "&code=" + escape(this.model.clients[client.id].auth.code);
 
             // make a http request for the access token
             this.request(auth_req, function(error, response, body) {
@@ -138,13 +163,13 @@ module.exports = {
 
         else {
             res.redirect( this.model.auth.request_code_url
-                         + "?client_id=" + this.model.auth.client_id
-                         + "&response_type="  + this.model.auth.response_type
-                         + "&redirect_uri=" + this.model.auth.redirect_url);            
+                         + "?client_id=" + escape(this.model.auth.client_id)
+                         + "&response_type="  + escape(this.model.auth.response_type)
+                         + "&redirect_uri=" + escape(this.model.auth.redirect_url + "?" + query_str));            
         }
     },
 
-    handleTokenResponse: function(body, res, id) {
+    handleTokenResponse: function(body, res, id ) {
         // convert body of message to json variable
         var body_json = JSON.parse(unescape(body))
             , main_page
@@ -157,7 +182,7 @@ module.exports = {
             this.model.auth.access_token = body_json["access_token"];
             this.model.clients[id].auth.access_token = body_json["access_token"];
             console.log("[handleTokenRequest] received auth token ", this.model.clients[id].auth.access_token)
-            res.redirect('/foursquare?client_id=' + id);
+            res.redirect('/foursquare?' + this.model.clients[id].auth.query_str);
         }
     },
 
@@ -184,40 +209,23 @@ module.exports = {
             queryJson.id = client.id;
         } 
 
-        // if the query object featured a valid query then process it
-        if (queryJson.query) {
-            console.log("Valid query from id: " + queryJson.id + ", query : " + queryJson.query);        
-
-            // if this is a different query
-            // if (!(this.model.clients[queryJson.id].query === queryJson.query)) {
-            //     console.log("Query is new");        
-            //     this.model.clients[queryJson.id].afterTimeStamp = 0;
-            //     this.model.clients[queryJson.id].query = queryJson.query;
-            // }
-
-            // // if queryJson object includes a geo object
-            // if (queryJson.geo) {
-            //     // if any of the geo filter attributes have changed then update the client object 
-            //     if ((queryJson.geo.lat != this.model.clients[queryJson.id].geo.lat) || 
-            //         (queryJson.geo.long != this.model.clients[queryJson.id].geo.long) ||
-            //         (queryJson.geo.radius != this.model.clients[queryJson.id].geo.radius) ||
-            //         (queryJson.geo.available != this.model.clients[queryJson.id].geo.available)) 
-            //     {
-            //         console.log("Geocode included : ", queryJson.geo);        
-            //         this.model.clients[queryJson.id].geo.lat = queryJson.geo.lat;
-            //         this.model.clients[queryJson.id].geo.long = queryJson.geo.long;
-            //         this.model.clients[queryJson.id].geo.radius = queryJson.geo.radius;
-            //         this.model.clients[queryJson.id].geo.available = queryJson.geo.available;                
-            //         this.model.clients[queryJson.id].afterTimeStamp = 0;     // reset last ID to 0
-            //     }
-            // }
-
-            // submit the query and client id to the query twitter app
+        if (queryJson.data.optional.geo) {
+            // if any of the geo filter attributes have changed then update the client object 
+            if ((queryJson.data.optional.geo.lat != this.model.clients[queryJson.id].geo.lat) || 
+                (queryJson.data.optional.geo.long != this.model.clients[queryJson.id].geo.long) ||
+                (queryJson.data.optional.geo.available != this.model.clients[queryJson.id].geo.available)) 
+            {
+                console.log("[handleQueryRequest] geocode included : ", queryJson.geo);        
+                this.model.clients[queryJson.id].geo.lat = queryJson.data.optional.geo.lat;
+                this.model.clients[queryJson.id].geo.long = queryJson.data.optional.geo.long;
+                this.model.clients[queryJson.id].geo.available = queryJson.data.optional.geo.available;                
+                this.model.clients[queryJson.id].afterTimeStamp = 0;     // reset last ID to 0
+            }
         }
 
         // // set the ajax_req flag to true and create the callback function
         this.model.clients[queryJson.id].reply = function(data) {
-            console.log("[this.model.clients[queryJson.id].reply] callback method: ", data);
+            console.log("[reply:handleQueryRequest] callback method, rendering data: ", data);
             res.end(data);                
         }
 
@@ -254,7 +262,7 @@ module.exports = {
         queryInputs.set_OauthToken(this.model.clients[clientId].auth.access_token);
         queryInputs.set_Latitude(40.7142);     // requesting response in json
         queryInputs.set_Longitude(-74.0064);     // requesting response in json
-        // queryInputs.set_AfterTimeStamp(this.model.clients[clientId].afterTimeStamp);
+        queryInputs.set_AfterTimeStamp(this.model.clients[clientId].createdAt);
 
         /**
          * successCallback Method that is called by the temboo API when the results from twitter are
@@ -290,8 +298,9 @@ module.exports = {
                                 "country": tResults.response["recent"][i].venue.location.country,
                                 "checkinsCount": tResults.response["recent"][i].venue.stats.checkinsCount,
                                 "createdAt": tResults.response["recent"][i].createdAt,
+                                "id": tResults.response["recent"][i].createdAt,
                                 // "source": tResults.response["recent"][i].source.name,
-                                "id": tResults.response["recent"][i].id
+                                // "id": tResults.response["recent"][i].id
                             };
                             console.log( "[successCallback:queryTemboo] element " + i, newCheckIn);
 

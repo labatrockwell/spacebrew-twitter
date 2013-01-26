@@ -91,7 +91,6 @@ var Spacebrew = Spacebrew || {};
  */
 Spacebrew.Client = function( server, name, description ){
 
-	console.log("building Spacebrew object")
 	/**
 	 * Name of app
 	 * @type {String}
@@ -115,7 +114,7 @@ Spacebrew.Client = function( server, name, description ){
 	 * Spacebrew server to which the app will connect
 	 * @type {String}
 	 */
-	this.server = server || "localhost";
+	this.server = server || "sandbox.spacebrew.cc";
 	if (window) {
 		this.server = (window.getQueryString('server') !== "" ? window.getQueryString('server') : this.server);
 	}
@@ -141,6 +140,8 @@ Spacebrew.Client = function( server, name, description ){
 		}
 	};
 
+	console.log("this.config: ", this.config)
+	console.log("this.server: ", this.server)
 	/**
 	 * Are we connected to a Spacebrew server?
 	 * @type {Boolean}
