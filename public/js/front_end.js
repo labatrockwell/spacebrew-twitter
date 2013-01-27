@@ -1,14 +1,25 @@
 var clientId = clientId || -1
 	, debug = true;
 
+/**
+ * Model Namespace for the model object that is configured for each webapp
+ * @namespace
+ */
 var Model = {};
 
+	/**
+	 * Model.Main Constructor for the app model. It initializes the model based on the config object that
+	 * 			  is passed in as an argument.
+	 * @param  {Object} config  Configuration object that is used to maintain the app's state.
+	 * @return {Model.Main}		Returns an instance of the app model.
+	 */
 	Model.Main = function (config) {
 		if (getQueryString("refresh")) {
 			this.controls.refresh = !isNaN(getQueryString("refresh")) ? (getQueryString("refresh") * 1000) : this.controls.refresh;
 		}
 		this.config = config;
 
+		// set-up the input state variables
 		for (var type in this.config.input) {
 			this.data.input[type] = {};	
 			for (var group in this.config.input[type]) {
@@ -20,6 +31,7 @@ var Model = {};
 			}
 		}
 
+		// set-up the output state variables
 		for (var type in this.config.output) {
 			this.data.output[type] = {};	
 			this.data.output[type].list = [];
@@ -29,6 +41,11 @@ var Model = {};
 		console.log("Model.Main - model has been created: ", this.data);
 	}
 
+	/**
+	 * Model.Main Prototype The model prototype shows the top-level structure of how the model
+	 * 			  structures its data.
+	 * @type {Control.Main}
+	 */
 	Model.Main.prototype = {
 		constructor: Model.Main,
 		config: {},
@@ -42,8 +59,8 @@ var Model = {};
 	}
 
 /**
- * Control namespace for the controller elements of the webservices app
- * @type {Object}
+ * Control Namespace for the controller elements of the webservices app
+ * @namespace
  */
 var Control = {};
 
@@ -75,10 +92,6 @@ var Control = {};
 		// set interval for making requests to twitter
 		this.interval = undefined;
 
-		// this.interval = setInterval(function() {
-		// 	self._query();
-		// }, this.model.controls.refresh);
-
 		console.log("Control.Main set refresh to: ", this.model.controls.refresh);
 	}
 
@@ -102,6 +115,7 @@ var Control = {};
 		 * @return {[type]} [description]
 		 */
 		_query: function () {
+			// loop through the required data fields to make sure data has been provided
 			var data_avail = false;
 			for (var group in this.model.data.input.required) {
 				var attr_avail = false;
@@ -110,20 +124,17 @@ var Control = {};
 					attr_avail = true;
 				}
 			}
-
 			console.log("[Control:_query] attr_avail: " + attr_avail + " data_avail " + !data_avail );
 
-			if (attr_avail && !data_avail) return;
+			// if client is not valid and data not provided for a required attribute then exit the function
+			if ((attr_avail && !data_avail) || (clientId == -1)) return;
 
-			if (clientId == -1) return;
-
-			var query = { "id": 	clientId 
-						, "data": 	this.model.data.input } 
+			// prepare query object and create self variable with link to current context
+			var query = { "id": clientId , "data": this.model.data.input } 
 				, self = this;
-
 			console.log("[Control:_query] new query: ", query );
-			console.log("[Control:_query] making query to ", this.model.config.query_path);
 
+			// make ajax request to the server for data from a webservice
 			$.ajax({
 			    type: 			"GET",
 			    url: 			this.model.config.query_path, 
@@ -318,24 +329,9 @@ View.Web = function (config) {
 		 * 		set-up for submit button click, and carriage returns and new line keypress events.
 		 */
 		setup: function() {
-			// var self = this;
-
 			this.setupForm();
 			this.setupDataTemplate();
 			this.setupListeners();
-
-			// $(".qSubmit").on("click", function() {
-			// 	if ($("#qText").val() != "" ) {
-			// 		self.submit();
-			// 	}
-			// });
-
-			// //add listeners to all the text box to submit query on return/enter
-			// $(".textBox").on("keypress", function(event) {
-			// 	if ($(this).val() != "" && (event.charCode == 13 || event.charCode == 10)) {
-			// 		self.submit();
-			// 	}
-			// });				
 		},
 
 		/**
@@ -400,6 +396,10 @@ View.Web = function (config) {
 			}			
 		},
 
+		/**
+		 * setupDataTemplate Mehod that creates the html template to handle the data from this
+		 * 					 webservice. This template is cloned to display data.
+		 */
 		setupDataTemplate: function() {
 			var $typeDiv
 				, $groupDiv
