@@ -52,8 +52,8 @@ module.exports = {
 		"grant_type" : GRANT_TYPE,					// string - should be set to "authorization_code"
 		"client_secret" : CLIENT_SECRET,			// string - available once you set-up the app on foursquare
 		"redirect_url" : REDIRECT_URL,				// string - URL that foursquare redirects users to during auth 
-													// 			process. This needs to be the same redirect URL that is 
-													//			registered with your foursquare app.
+													// 			process. This needs to be the same redirect URL that  
+													//			is registered with your foursquare app.
     }
 };
 ```
