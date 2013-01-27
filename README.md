@@ -31,15 +31,32 @@ Next, you need to create temboo_auth.js file with your Temboo credentials and ap
 ```
 module.exports = {
     tAuth : {
-        user : ADD_TEMBOO_USER_NAME,
-        app : ADD_TEMBOO_APP_NAME,
-        key : ADD_TEMBOO_APP_KEY
+        user : ADD_TEMBOO_USER_NAME,  // string
+        app : ADD_TEMBOO_APP_NAME,		// string
+        key : ADD_TEMBOO_APP_KEY		// string
     }
 };
 ```
 
 ###3. Set-up the Appropriate Webservice Auth Files
 You only need to create these files for the webservices that required Oauth 2.0 authorization. Currently, only the foursquare app requires this type of authorization. In order to create this file you will need to set-up an application in the API console from the appropriate webservice.
+
+Below is a description of the authorization file that you will need to set-up for the foursquare app. Make sure to save this file in the `auth` folder with the name `auth_foursquare.js`.
+```
+module.exports = {
+    tAuth : {
+    	"request_code_url" : REQUEST_CODE_URL,		// string - endpoint where we will send the "code" request
+		"client_id" : CLIENT_ID,					// string - client id from foursquare
+		"response_type" : RESPONSE_TYPE,			// string - should be set to "code"
+		"request_token_url" : REQUEST_TOKEN_URL,	// string - endpoint where we will send the "access_token" request
+		"grant_type" : GRANT_TYPE,					// string - should be set to "authorization_code"
+		"client_secret" : CLIENT_SECRET,			// string - available once you set-up the app on foursquare
+		"redirect_url" : REDIRECT_URL,				// string - URL that foursquare redirects users to during auth 
+													// 			process. This needs to be the same redirect URL that is 
+													//			registered with your foursquare app.
+    }
+};
+```
 
 ###4. Run App
 Now you are ready to run the app. Go to app's base directory in the terminal, or other shell, and enter the launch command below with the appropriate arguments.
@@ -64,7 +81,10 @@ You can configure the app using the following query string options:
 * `description`: description of the application that will be registered with spacebrew.
 * `refresh`: number of seconds between each time the data is refreshed.
 
-When the app is loaded, type in a query and hit submit and watch the tweets come up. Note that the app only loads new tweets every 20 seconds. You can also can change the frequency of refresh by specifying the interval time in milliseconds in the query string, using the key `refresh`.
+Here is an example URL with all of these query options defined:
+```
+http://localhost:3009/twitter?server=sandbox.spacebrew.cc&refresh=10&name=tweets in space&description=app that forwards tweets
+```
   
 Latest Updates
 ---------------------
