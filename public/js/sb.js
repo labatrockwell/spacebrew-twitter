@@ -91,13 +91,14 @@ var Spacebrew = Spacebrew || {};
  */
 Spacebrew.Client = function( server, name, description ){
 
+	console.log("building Spacebrew object")
 	/**
 	 * Name of app
 	 * @type {String}
 	 */
 	this._name = name || "javascript client";
 	if (window) {
-		this._name = (window.getQueryString('name') !== "" ? getQueryString('name') : this._name);
+		this._name = (window.getQueryString('name') !== "" ? unescape(window.getQueryString('name')) : this._name);
 	}
 	
 	/**
@@ -106,7 +107,7 @@ Spacebrew.Client = function( server, name, description ){
 	 */
 	this._description = description || "spacebrew javascript client";
 	if (window) {
-		this._description = (window.getQueryString('description') !== "" ? window.getQueryString('description') : this._description);
+		this._description = (window.getQueryString('description') !== "" ? unescape(window.getQueryString('description')) : this._description);
 	}
 
 
@@ -116,7 +117,7 @@ Spacebrew.Client = function( server, name, description ){
 	 */
 	this.server = server || "sandbox.spacebrew.cc";
 	if (window) {
-		this.server = (window.getQueryString('server') !== "" ? window.getQueryString('server') : this.server);
+		this.server = (window.getQueryString('server') !== "" ? unescape(window.getQueryString('server')) : this.server);
 	}
 
 	/**
@@ -140,8 +141,6 @@ Spacebrew.Client = function( server, name, description ){
 		}
 	};
 
-	console.log("this.config: ", this.config)
-	console.log("this.server: ", this.server)
 	/**
 	 * Are we connected to a Spacebrew server?
 	 * @type {Boolean}

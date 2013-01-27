@@ -14,14 +14,14 @@ var express = require('express')
     , handleRoot = rootApp.handleRoot.bind(rootApp)
 
     // twitter app handlers
-    , twitterApp = require('./controllers/twitter').init({"session": session})
+    , twitterApp = require('./controllers/twitter_control').init({"session": session})
     , handleTwitterApp = twitterApp.handleAppRequest.bind(twitterApp)
     , handleTwitterQuery = twitterApp.handleQueryRequest.bind(twitterApp)
 
     // twitter app handlers
     , fsAuth = require("./auth/auth_foursquare").tAuth
     , foursquareConfig = { "session": session, "auth": fsAuth }
-    , foursquareApp = require('./controllers/foursquare').init(foursquareConfig)
+    , foursquareApp = require('./controllers/foursquare_control').init(foursquareConfig)
     , handleFoursquareApp = foursquareApp.handleAppRequest.bind(foursquareApp)
     , handleFoursquareAuth = foursquareApp.handleAuthenticationReq.bind(foursquareApp)
     , handleFoursquareQuery = foursquareApp.handleQueryRequest.bind(foursquareApp)
@@ -55,7 +55,7 @@ app.use(express.logger('dev'))                                                  
 app.use(stylus.middleware( { src: __dirname + '/public', compile: compileStylus } ))    // set middleware to use stylus
 app.use(express.static(__dirname + '/public'))                                          // serve files in public directory
 
-// set application routes
+// set application routes for twitter app
 app.get('/', handleRoot);
 app.get('/twitter', handleTwitterApp);
 app.get('/twitter/search', handleTwitterQuery);
@@ -68,9 +68,6 @@ app.get('/foursquare/query', handleFoursquareQuery);
 
 app.listen(model.httpPort)    
 
-//////////////////
-//////////////////
-// Set-up Methods
 
 /**
  * compileStylus Compiles the stylus library to use nib. These are the libraries that handle the stylesheet
@@ -92,9 +89,6 @@ function compileStylus(str, path) {
  * @param  {Array} array    Array containing other command line arguments
  */
 function readArgv(val, index, array) {
-    // check if port number was passed as argument
-    // console.log(index + ': ' + val);
-
     // check if port number was passed as argument
     var regMatch = val.match(/(\w+)=(\d+)/)
     if (regMatch) {

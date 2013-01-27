@@ -73,9 +73,11 @@ var Control = {};
 		}
 
 		// set interval for making requests to twitter
-		this.interval = setInterval(function() {
-			self._query();
-		}, this.model.controls.refresh);
+		this.interval = undefined;
+
+		// this.interval = setInterval(function() {
+		// 	self._query();
+		// }, this.model.controls.refresh);
 
 		console.log("Control.Main set refresh to: ", this.model.controls.refresh);
 	}
@@ -92,7 +94,8 @@ var Control = {};
 		initialized: false,			// flag that identifies if view has been initialized
 		views: [],					// link to view, where content is displayed and queries are submitted
 		model: {},					// link to model, which holds configuration and live data
-		interval: {},				// interval object that calls the query method repeatedly
+		interval: undefined,				// interval object that calls the query method repeatedly
+		forwarding: false,
 
 		/**
 		 * _query method that is called 
@@ -134,29 +137,23 @@ var Control = {};
 						, curTweet = {}
 						, vals = [];
 
-					// if the response is not for the most recent query then don't process it
-					// if (jData.query !== self.model.data.input.required.query.text) return;
+					console.log("[Controller:_query:success] new data received ", jData.list);
 
-					console.log("[Controller:_query:success] data test ", self.model.data);
-					// if (jData.query !== self.model.data.query.text) return;
-
-					console.log("[Controller:_query:success] data received received ", jData.list);
-
-		    		// loop through the new tweet array to add each one to our model 
+		    		// loop through the new content array to add each element to our model 
 				    for (var i = 0; i < jData.list.length; i++) {
 						for (var content in this.model.data.output) {
 		    	    		self.model.data.output[content].list.unshift(jData.list[i]);
 		    	    	}
 		    		}
 
-		    		// if our model array has grown to large will shrink it back down
+		    		// if our model array has grown too large then shrink it back down
 					for (var content in this.model.data.output) {
-			    		if (self.model.data.output[content].list > maxLen) {
+			    		if (self.model.data.output[content].list.length > maxLen) {
 	    		    		self.model.data.output[content].list = self.model.data.output[content].list.slice(0,maxLen);    			
 	    		    	}
     	    		}
 
-    	    		// load the content to the page
+    	    		// load the content to the different views
     	    		for (var j = 0; j < self.views.length; j += 1) {
 					    if (self.views[j]["load"]) {
 						    console.log("[Controller:_query:success] loading content to views ", j)	    			
@@ -164,8 +161,8 @@ var Control = {};
 					    }
     	    		}
 
+    	    		// update the id or time_created of the most recent data element				
 					for (var content in this.model.data.output) {
-	    	    		// update the latest variable if there are new content items in the queu				
 	    	    		if (self.model.data.output[content].list.length > 0) {
 						    console.log("[Controller:_query:success] update the latest id to ", self.model.data.output[content].list[0].id)	    			
 							self.model.data.output[content].latest = self.model.data.output[content].list[0].id;					
@@ -184,57 +181,96 @@ var Control = {};
 		 * @param  {String } query Twitter query string
 		 */
 		submit: function (query) {
-			var regex_lat = /([0-9]{1,2}.[0-9]{1,10})/
-				, regex_long = /([0-9]{1,3}.[0-9]{1,10})/
-				, regex_rad = /([0-9]{1,6})/
-				, regex_integer = /[0-9\.-]+/
-				, regex_string = /[\w-]+/
-				, match_results = undefined				
-				, geo_attrs = ["lat", "long", "radius"]
-				, regexes = [regex_lat, regex_long, regex_rad]
-				, new_regexes = {"integer": regex_integer, "string": regex_string}
-				, geo_available = true
-				;
+			// handle button press if forwarding is active by turning off forwarding
+			if (this.forwarding) {
+				if (true) console.log("[Control:submit] stop forwarding ");
 
-			if (true) console.log("[Control:submit] new query: ", query );
-			if (true) console.log("[Control:submit] this.model.data.input: ", this.model.data.input );
+				// update the state in the appropriate views (such as the web view)
+	    		for (var i = 0; i < this.views.length; i += 1) {
+				    if (this.views[i]["updateState"]) this.views[i].updateState(false);	    			
+	    		}
+	    		// turn off the interval, and set the interval variable to undefined
+	    		if (this.interval) {
+	    			clearInterval(this.interval);
+	    			this.interval = undefined;
+	    		}
 
-			// loop through each input to read each one				
-			for (var type in this.model.config.input) {
-				for (var group in this.model.config.input[type]) {
-					var data_available = true;
+			// handle button press if forwarding is NOT active by turning on forwarding
+			} else {
+				if (true) console.log("[Control:submit] start forwarding ");
 
-					for (var attr in this.model.config.input[type][group]) {
-						var data_type = this.model.config.input[type][group][attr];
+				var regex_integer = /[0-9\.-]+/
+					, regex_string = /[\w-]+/
+					, match_results = undefined				
+					, geo_attrs = ["lat", "long", "radius"]
+					, new_regexes = {"integer": regex_integer, "string": regex_string}
+					, geo_available = true
+					, self = this
+					;
 
-						match_results = query[type][group][attr].match(new_regexes[data_type]);
-						if (match_results) {
-							console.log("matched " , match_results);
-							this.model.data.input[type][group][attr] = query[type][group][attr];
+				if (true) console.log("[Control:submit] new query: ", query );
+				if (true) console.log("[Control:submit] this.model.data.input: ", this.model.data.input );
+
+				// loop through each input type (required and optional) and group 				
+				for (var type in this.model.config.input) {
+					for (var group in this.model.config.input[type]) {
+						var data_available = true;
+
+						// loop through each input field within the current group
+						for (var attr in this.model.config.input[type][group]) {
+							// make sure that the input string has an appropriate value, using regex
+							var data_type = this.model.config.input[type][group][attr];
+							match_results = query[type][group][attr].match(new_regexes[data_type]);
+
+							// if input string has an appropriate value then store it
+							if (match_results) {
+								if (true) console.log("[Control:submit] matched " , match_results);
+								this.model.data.input[type][group][attr] = query[type][group][attr];
+							// if input string does not have an appropriate value then set data_available to false
+							} else {
+								data_available = false;
+								break;
+							}
+						}
+
+						// if data valid data was provided for all input field in this group then
+						// set the available flag for this data group to true
+						if (data_available) {
+							this.model.data.input[type][group].available = true;
 						} else {
-							data_available = false;
+							this.model.data.input[type][group].available = false;						
 						}
 					}
-					if (data_available) {
-						this.model.data.input[type][group].available = true;
-					} else {
-						this.model.data.input[type][group].available = false;						
-					}
 				}
-				// console.log("[Control:submit] updated data object: " + this.model.data.input[type]);
-			}
-			if (true) console.log("[Control:submit] data test: ", this.model.data );
+				if (true) console.log("[Control:submit] data test: ", this.model.data );				
 
-			for (var ele in this.model.data.output) {
-				this.model.data.output[ele].list = [];
-				this.model.data.output[ele].latest = 0;				
+				// re-initialize the list and latest variables for each output
+				for (var ele in this.model.data.output) {
+					this.model.data.output[ele].list = [];
+					this.model.data.output[ele].latest = 0;				
+				}
+
+				// update the views as appropriate
+	    		for (var i = 0; i < this.views.length; i += 1) {
+				    if (this.views[i]["updateState"]) this.views[i].updateState(true);	    			
+				    if (this.views[i]["clear"]) this.views[i].clear();	    			
+				    if (this.views[i]["load"]) this.views[i].load();	    			
+	    		}
+
+	    		// re-setting the forwarding interval
+				if (true) console.log("[Control:submit] setting interval time to: ", this.model.controls.refresh );
+	    		if (this.interval) { clearInterval(this.interval); }
+				this.interval = setInterval(function() {
+					console.log("[Control:submit] requesting new data ");
+					self._query();
+				}, this.model.controls.refresh);
+
+				// finally, let's make a query to the appropriate webservice
+			    this._query();
 			}
 
-    		for (var i = 0; i < this.views.length; i += 1) {
-			    if (this.views[i]["clear"]) this.views[i].clear();	    			
-			    if (this.views[i]["load"]) this.views[i].load();	    			
-    		}
-		    this._query();
+			// change the data forwarding state of the app
+    		this.forwarding = !this.forwarding;
 		}
 	}
 
@@ -244,9 +280,10 @@ var Control = {};
  * View namespace for the view elements of the webservices app. Here is an overview of the view
  * 		API methods:
  * 		* registerController (all views)
- * 		* submit (input view)
- * 		* load (display view)
- * 		* clear (display view)
+ * 		* submit (all views)
+ * 		* load (all view)
+ * 		* clear (web view only)
+ * 		* updateState (web view only)
  * @type {Object}
  */
 var View = {};
@@ -281,26 +318,51 @@ View.Web = function (config) {
 		 * 		set-up for submit button click, and carriage returns and new line keypress events.
 		 */
 		setup: function() {
-			var self = this;
+			// var self = this;
 
 			this.setupForm();
 			this.setupDataTemplate();
+			this.setupListeners();
 
+			// $(".qSubmit").on("click", function() {
+			// 	if ($("#qText").val() != "" ) {
+			// 		self.submit();
+			// 	}
+			// });
+
+			// //add listeners to all the text box to submit query on return/enter
+			// $(".textBox").on("keypress", function(event) {
+			// 	if ($(this).val() != "" && (event.charCode == 13 || event.charCode == 10)) {
+			// 		self.submit();
+			// 	}
+			// });				
+		},
+
+		/**
+		 * setupListeners Sets up the submit button and text box listeners for submitting twitter queries. 
+		 * 		Listeners are set-up for submit button click, and carriage returns and new line keypress 
+		 * 		events.
+		 */
+		setupListeners: function() {
+			var self = this;
+
+			// add listener to the submit button
 			$(".qSubmit").on("click", function() {
 				if ($("#qText").val() != "" ) {
 					self.submit();
 				}
 			});
 
-			//add listeners to all the text box to submit query on return/enter
+			//add listeners to all the text boxes to trigger "submit" when return or enter are pressed
 			$(".textBox").on("keypress", function(event) {
 				if ($(this).val() != "" && (event.charCode == 13 || event.charCode == 10)) {
 					self.submit();
 				}
 			});				
-
 		},
-
+		/**
+		 * setupForm Sets up the input form for whichever webservice is being rendered.
+		 */
 		setupForm: function() {
 			var $typeDiv
 				, $groupDiv
@@ -332,7 +394,7 @@ View.Web = function (config) {
 					}							
 					
 					// add submit button to the button of each group
-					htmlSettings = { 	class: 'qSubmit', type: "button", value: "submit query" };
+					htmlSettings = { class: 'qSubmit', type: "button", value: "start forwarding" };
 					$('<input>', htmlSettings).appendTo($groupDiv);
 				}
 			}			
@@ -426,6 +488,14 @@ View.Web = function (config) {
 		 */
 		clear: function() {
 			$("#content .tweet").remove();        
+		},
+
+		/**
+		 * clear Method that clears the list of content elements from the browser.
+		 */
+		updateState: function(_on) {
+			if (_on) $("#query_form .qSubmit").val("stop forwarding");        
+			else $("#query_form .qSubmit").val("start forwarding");        
 		},
 
 		/**

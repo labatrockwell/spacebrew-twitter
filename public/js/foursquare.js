@@ -68,14 +68,28 @@ var app = {}
 		"query_path" : "/foursquare/search"
 	};
 
+
+/**
+ * sbFunctions Constructor for the object that holds the spacebrew callback methods that will be registered
+ * 			   with the controller via the addCallback method.
+ */
 function sbFunctions () {
 
+	/**
+	 * sbLoadCheckins	Method that processes each check-in for spacebrew. It parses out the appropriate
+	 * 					check-in data attributes and recombines as required into strings that are sent
+	 * 					via spacebrew.
+	 * @param  {content} content holds the current check-in that is being processed
+	 * @param  {Object} pubs     holds the names and types of the spacebrew pubs channels
+	 * @param  {Object} sb       holds a link to the spacebrew connection
+	 */
 	this.sbLoadCheckins = function(content, pubs, sb) {
-		console.log("sbLoadCheckins called ");
+		console.log("[sbLoadCheckins:sbFunctions] called ");
 		var user_venue = { "user": content.user, "venue": content.venue}
 		var user_coords = { "user": content.user, "lat": content.lat, "long": content.long}
 		var user_photo = { "user": content.user, "photo": content.photo}
 
+		// set the values for each publication feed
 		vals = [
 			content.user 
 			, JSON.stringify(user_venue)
@@ -83,7 +97,9 @@ function sbFunctions () {
 			, JSON.stringify(user_photo)
 			, content.photo
 			, "true"
-		];	// set the values for each publication feed
+		];	
+
+		// loop through pubs array to send the appropriate spacebrew message via each outlet 
 		for (var j in pubs) {							
 			console.log("sbLoadCheckins name " + pubs[j].name + " type " + pubs[j].type + " vals " + vals[j]);
 			sb.send( pubs[j].name, pubs[j].type, vals[j] );                            
@@ -105,6 +121,7 @@ $(window).bind("load", function() {
 			if (getQueryString("server")) url += "&server=" + getQueryString("server");    
 			if (getQueryString("name")) url += "&name=" + getQueryString("name");    
 			if (getQueryString("description")) url += "&description=" + getQueryString("description");    
+			if (getQueryString("refresh")) url += "&refresh=" + getQueryString("refresh");    
 			$(location).attr('href',url);
 		})
 	} 
