@@ -1,11 +1,11 @@
-Spacebrew Twitter App
----------------------
-An app the forwards tweets to spacebrew. People can submit queries via a text box, and then all new tweets that match the query are forwarded to spacebrew every 30 seconds.
+Spacebrew Webservices App
+==================  
+An app that forwards tweets and foursquare check-ins to spacebrew. People can define filters via text boxes, and then all content that meets the filter requirements are forwarded to spacebrew at a specific refresh rate.
 
 Installing the App  
-==================  
+---------------------
   
-##1. Install dependencies 
+###1. Install dependencies 
 The first step is installing the node modules in the node_modules directory of this project. Most modules can be installed using node's nifty npm utility, though one of them will require a manual install. 
   
 To install modules using npm, open up the terminal program and go to the base directory of this project. Then run the following command for each module:   
@@ -20,11 +20,12 @@ Here is a list of the packages that can be installed via npm. Just run the comma
 * `nib`  
 * `stylus`  
 * `ws`  
+* `request`
   
 Packages that need to be installed manually:  
 * `Temboo` To install this module go to [Temboo website](http://www.temboo.com), sign-up for account, download the node sdk, and copy it into the node_modules directory of this project.  
   
-##2. Set-up Temboo Credentials
+###2. Set-up Temboo Credentials
 Next, you need to create temboo_auth.js file with your Temboo credentials and app information. This file is ignored by git because it contains private information that should not be tracked. The temboo_auth.js file needs to follow the format outlined below, which is also available on the temboo_auth_template.js template file. 
 
 ```
@@ -37,7 +38,10 @@ module.exports = {
 };
 ```
 
-##3. Run App
+###3. Set-up the Appropriate Webservice Auth Files
+You only need to create these files for the webservices that required Oauth 2.0 authorization. Currently, only the foursquare app requires this type of authorization. In order to create this file you will need to set-up an application in the API console from the appropriate webservice.
+
+###4. Run App
 Now you are ready to run the app. Go to app's base directory in the terminal, or other shell, and enter the launch command below with the appropriate arguments.
 
 ```
@@ -50,15 +54,19 @@ When launching the node app you can specify the port number where the front-end 
 node app.js port=3009 
 ```  
     
-##4. Play Time
-Open a browser, navigate to the server at the appropriate port number, and set add the spacebrew server address and app name to the query string, as shown below.
+###5. Play Time
+Once the app is running, you can access the twitter app at `/twitter` and the foursquare app at `/foursquare`. Therefore, if you are running the server on your local computer using port 3009 then the twitter app would available at `http://localhost:3009/twitter`, while the foursquare app would be available at `http://localhost:3009/foursquare`.
 
-[`http://localhost:3009?server=server=sandbox.spacebrew.cc&name=tweets&`](http://localhost:3009?server=server=ec2-184-72-140-184.compute-1.amazonaws.com&name=tweets&) 
-  
+You can configure the app using the following query string options:
+
+* `name`: name of the application that will be registered with spacebrew. 
+* `server`: spacebrew server hostname.
+* `description`: description of the application that will be registered with spacebrew.
+* `refresh`: number of seconds between each time the data is refreshed.
+
 When the app is loaded, type in a query and hit submit and watch the tweets come up. Note that the app only loads new tweets every 20 seconds. You can also can change the frequency of refresh by specifying the interval time in milliseconds in the query string, using the key `refresh`.
   
 Latest Updates
-===============
-* Fixed bug with spacebrew forwarding features, where messages were being resent.
-* Add geocoding filter to the twitter filter requests
-* Changed layout to work better with additional input fields
+---------------------
+* foursquare forwarder is now fully functional
+* forwarding can be started and stopped on both twitter and foursquare forwarders
