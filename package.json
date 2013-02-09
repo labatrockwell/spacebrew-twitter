@@ -1,13 +1,15 @@
 {
-  "name": "murmuring-beach-1036",
-  "version": "0.0.1",
+  "name": "spacebrew-webservices-app",
+  "version": "0.0.2",
   "private": "true",
   "dependencies": {
     "express": ">=3.0.0",
     "jade": "*",
     "stylus": "*",
     "nib": "*",
-    "request": "*"
+    "request": "*",
+    "ws": "*",
+    "temboo": "*"
   },
   "engines": {
     "node": ">=0.8.0",

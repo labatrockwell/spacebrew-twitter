@@ -185,13 +185,25 @@ module.exports = {
                 // loop through results to prepare data to send to front end
                 for(var i = self.model.clients[clientId].results.length - 1; i >= 0; i--) {
                     if (self.model.clients[clientId].results[i].id > self.model.clients[clientId].lastId) {
-                    // console.log( "[successCallback:queryTemboo] result : d" + tResults.results );
+
                         newTweet = {
-                            "user": self.model.clients[clientId].results[i].from_user,
-                            "text": self.model.clients[clientId].results[i].text,
-                            "created_at": self.model.clients[clientId].results[i].created_at,
-                            "id": self.model.clients[clientId].results[i].id
+                            "user": self.model.clients[clientId].results[i].from_user
+                            , "text": self.model.clients[clientId].results[i].text
+                            , "created_at": self.model.clients[clientId].results[i].created_at
+                            , "id": self.model.clients[clientId].results[i].id
+                            , "photo": self.model.clients[clientId].results[i].profile_image_url
+                            , "lat": "not available"
+                            , "long": "not available"
+                            // , "hashtags": self.model.clients[clientId].results[i].entities.hashtags
                         };
+
+                        if (self.model.clients[clientId].results[i]["geo"]) {
+                            if (self.model.clients[clientId].results[i].geo["coordinates"]) {
+                                newTweet.lat = self.model.clients[clientId].results[i].geo.coordinates[0];
+                                newTweet.long = self.model.clients[clientId].results[i].geo.coordinates[1];
+                            }
+                        }
+
                         newTweets.push(newTweet);
 
                         // update the id of the most recent message

@@ -15,13 +15,14 @@
  * filename sb-1.0.0.min.js.
  *
  * Latest Updates:
+ * - updated boolean handling to fix bug where false values were resolving to true.
  * - packaged library as a module when it is imported into a node server environment. This makes
  * 	 it possible to use this library to connect to Spacebrew from a node server.
  * 
  * @author 		Brett Renfer and Julio Terra from LAB @ Rockwell Group
- * @filename	sb-1.0.0.js
- * @version 	1.0.1
- * @date 		Jan 21, 2013
+ * @filename	sb.js
+ * @version 	1.0.2
+ * @date 		Feb 5, 2013
  * 
  */
 
@@ -98,7 +99,7 @@ Spacebrew.Client = function( server, name, description ){
 	 */
 	this._name = name || "javascript client";
 	if (window) {
-		this._name = (window.getQueryString('name') !== "" ? getQueryString('name') : this._name);
+		this._name = (window.getQueryString('name') !== "" ? unescape(window.getQueryString('name')) : this._name);
 	}
 	
 	/**
@@ -107,7 +108,7 @@ Spacebrew.Client = function( server, name, description ){
 	 */
 	this._description = description || "spacebrew javascript client";
 	if (window) {
-		this._description = (window.getQueryString('description') !== "" ? window.getQueryString('description') : this._description);
+		this._description = (window.getQueryString('description') !== "" ? unescape(window.getQueryString('description')) : this._description);
 	}
 
 
@@ -115,9 +116,9 @@ Spacebrew.Client = function( server, name, description ){
 	 * Spacebrew server to which the app will connect
 	 * @type {String}
 	 */
-	this.server = server || "localhost";
+	this.server = server || "sandbox.spacebrew.cc";
 	if (window) {
-		this.server = (window.getQueryString('server') !== "" ? window.getQueryString('server') : this.server);
+		this.server = (window.getQueryString('server') !== "" ? unescape(window.getQueryString('server')) : this.server);
 	}
 
 	/**
@@ -300,7 +301,7 @@ Spacebrew.Client.prototype._onMessage = function( e ){
 
 	switch( type ){
 		case "boolean":
-			this.onBooleanMessage( name, Boolean(value) );
+			this.onBooleanMessage( name, value == "true" );
 			break;
 		case "string":
 			this.onStringMessage( name, value );

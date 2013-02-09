@@ -1,5 +1,5 @@
 var clientId = clientId || -1
-	, debug = true;
+	, debug = false;
 
 /**
  * Model Namespace for the model object that is configured for each webapp
@@ -38,7 +38,7 @@ var Model = {};
 			this.data.output[type].latest = 0;
 		}
 
-		console.log("Model.Main - model has been created: ", this.data);
+		if (debug) console.log("Model.Main - model has been created: ", this.data);
 	}
 
 	/**
@@ -92,7 +92,7 @@ var Control = {};
 		// set interval for making requests to twitter
 		this.interval = undefined;
 
-		console.log("Control.Main set refresh to: ", this.model.controls.refresh);
+		if (debug) console.log("Control.Main set refresh to: ", this.model.controls.refresh);
 	}
 
 	/**
@@ -124,7 +124,7 @@ var Control = {};
 					attr_avail = true;
 				}
 			}
-			console.log("[Control:_query] attr_avail: " + attr_avail + " data_avail " + !data_avail );
+			if (debug) console.log("[Control:_query] attr_avail: " + attr_avail + " data_avail " + !data_avail );
 
 			// if client is not valid and data not provided for a required attribute then exit the function
 			if ((attr_avail && !data_avail) || (clientId == -1)) return;
@@ -132,7 +132,7 @@ var Control = {};
 			// prepare query object and create self variable with link to current context
 			var query = { "id": clientId , "data": this.model.data.input } 
 				, self = this;
-			console.log("[Control:_query] new query: ", query );
+			if (debug) console.log("[Control:_query] new query: ", query );
 
 			// make ajax request to the server for data from a webservice
 			$.ajax({
@@ -141,14 +141,14 @@ var Control = {};
 			    contentType: 	"application/json; charset=utf-8",
 			    dataType: 		"json",
 			    context: 		self,
-				data: 			JSON.stringify(query),
+				data: 			escape(JSON.stringify(query)),
 
 			    success: function(jData) {
 		    		var maxLen = 25
 						, curTweet = {}
 						, vals = [];
 
-					console.log("[Controller:_query:success] new data received ", jData.list);
+					if (debug) console.log("[Controller:_query:success] new data received ", jData.list);
 
 		    		// loop through the new content array to add each element to our model 
 				    for (var i = 0; i < jData.list.length; i++) {
@@ -167,7 +167,7 @@ var Control = {};
     	    		// load the content to the different views
     	    		for (var j = 0; j < self.views.length; j += 1) {
 					    if (self.views[j]["load"]) {
-						    console.log("[Controller:_query:success] loading content to views ", j)	    			
+						    if (debug) console.log("[Controller:_query:success] loading content to views ", j)	    			
 					    	self.views[j]["load"]();
 					    }
     	    		}
@@ -175,14 +175,14 @@ var Control = {};
     	    		// update the id or time_created of the most recent data element				
 					for (var content in this.model.data.output) {
 	    	    		if (self.model.data.output[content].list.length > 0) {
-						    console.log("[Controller:_query:success] update the latest id to ", self.model.data.output[content].list[0].id)	    			
+						    if (debug) console.log("[Controller:_query:success] update the latest id to ", self.model.data.output[content].list[0].id)	    			
 							self.model.data.output[content].latest = self.model.data.output[content].list[0].id;					
 	    	    		}
 	    	    	}
 			    },
 
 			    error: function(err) {
-			        console.log(err);
+			        if (debug) console.log(err);
 			    }
 			});
 		},
@@ -194,22 +194,6 @@ var Control = {};
 		submit: function (query) {
 			// handle button press if forwarding is active by turning off forwarding
 			if (this.forwarding) {
-				if (true) console.log("[Control:submit] stop forwarding ");
-
-				// update the state in the appropriate views (such as the web view)
-	    		for (var i = 0; i < this.views.length; i += 1) {
-				    if (this.views[i]["updateState"]) this.views[i].updateState(false);	    			
-	    		}
-	    		// turn off the interval, and set the interval variable to undefined
-	    		if (this.interval) {
-	    			clearInterval(this.interval);
-	    			this.interval = undefined;
-	    		}
-
-			// handle button press if forwarding is NOT active by turning on forwarding
-			} else {
-				if (true) console.log("[Control:submit] start forwarding ");
-
 				var regex_integer = /[0-9\.-]+/
 					, regex_string = /[\w-]+/
 					, match_results = undefined				
@@ -219,41 +203,47 @@ var Control = {};
 					, self = this
 					;
 
-				if (true) console.log("[Control:submit] new query: ", query );
-				if (true) console.log("[Control:submit] this.model.data.input: ", this.model.data.input );
+				if (debug) console.log("[Control:submit] new query: ", query );
+				if (debug) console.log("[Control:submit] this.model.data.input: ", this.model.data.input );
 
 				// loop through each input type (required and optional) and group 				
 				for (var type in this.model.config.input) {
-					for (var group in this.model.config.input[type]) {
-						var data_available = true;
+					if (query[type]) {
+						for (var group in this.model.config.input[type]) {
+							var data_available = true;
 
-						// loop through each input field within the current group
-						for (var attr in this.model.config.input[type][group]) {
-							// make sure that the input string has an appropriate value, using regex
-							var data_type = this.model.config.input[type][group][attr];
-							match_results = query[type][group][attr].match(new_regexes[data_type]);
+							if (query[type][group]) {
+								// loop through each input field within the current group
+								for (var attr in this.model.config.input[type][group]) {
+									// make sure that the input string has an appropriate value, using regex
+									var data_type = this.model.config.input[type][group][attr];
+									if (query[type][group][attr]) {
+										match_results = query[type][group][attr].match(new_regexes[data_type]);
 
-							// if input string has an appropriate value then store it
-							if (match_results) {
-								if (true) console.log("[Control:submit] matched " , match_results);
-								this.model.data.input[type][group][attr] = query[type][group][attr];
-							// if input string does not have an appropriate value then set data_available to false
-							} else {
-								data_available = false;
-								break;
+										// if input string has an appropriate value then store it
+										if (match_results) {
+											if (debug) console.log("[Control:submit] matched " , match_results);
+											this.model.data.input[type][group][attr] = query[type][group][attr];
+										// if input string does not have an appropriate value then set data_available to false
+										} else {
+											data_available = false;
+											break;
+										}								
+									} 
+								}
 							}
-						}
 
-						// if data valid data was provided for all input field in this group then
-						// set the available flag for this data group to true
-						if (data_available) {
-							this.model.data.input[type][group].available = true;
-						} else {
-							this.model.data.input[type][group].available = false;						
+							// if data valid data was provided for all input field in this group then
+							// set the available flag for this data group to true
+							if (data_available) {
+								this.model.data.input[type][group].available = true;
+							} else {
+								this.model.data.input[type][group].available = false;						
+							}
 						}
 					}
 				}
-				if (true) console.log("[Control:submit] data test: ", this.model.data );				
+				if (debug) console.log("[Control:submit] data test: ", this.model.data );				
 
 				// re-initialize the list and latest variables for each output
 				for (var ele in this.model.data.output) {
@@ -267,18 +257,39 @@ var Control = {};
 				    if (this.views[i]["clear"]) this.views[i].clear();	    			
 				    if (this.views[i]["load"]) this.views[i].load();	    			
 	    		}
-
-	    		// re-setting the forwarding interval
-				if (true) console.log("[Control:submit] setting interval time to: ", this.model.controls.refresh );
-	    		if (this.interval) { clearInterval(this.interval); }
-				this.interval = setInterval(function() {
-					console.log("[Control:submit] requesting new data ");
-					self._query();
-				}, this.model.controls.refresh);
-
 				// finally, let's make a query to the appropriate webservice
 			    this._query();
 			}
+		},
+
+		toggleState: function() {
+			var self = this; 
+
+			// handle button press if forwarding is active by turning off forwarding
+			if (this.forwarding) {
+				if (debug) console.log("[Control:toggleState] stop forwarding ");
+
+				// update the state in the appropriate views (such as the web view)
+	    		for (var i = 0; i < this.views.length; i += 1) {
+				    if (this.views[i]["updateState"]) this.views[i].updateState(false);	    			
+	    		}
+	    		// turn off the interval, and set the interval variable to undefined
+	    		if (this.interval) {
+	    			clearInterval(this.interval);
+	    			this.interval = undefined;
+	    		}
+
+			// handle button press if forwarding is NOT active by turning on forwarding
+			} else {
+				if (debug) console.log("[Control:toggleState] start forwarding - setting refresh interval to: ", this.model.controls.refresh );
+
+	    		// re-setting the forwarding interval
+	    		if (this.interval) { clearInterval(this.interval); }
+				this.interval = setInterval(function() {
+					if (debug) console.log("[Control:submit] requesting new data ");
+					self._query();
+				}, this.model.controls.refresh);
+			}					
 
 			// change the data forwarding state of the app
     		this.forwarding = !this.forwarding;
@@ -303,7 +314,7 @@ var View = {};
  * View.Web constructor method. Sets up the event listeners for the input text box and button.
  */
 View.Web = function (config) {
-		if (this.debug) console.log("[View.Web] calling constructor ");
+		if (debug) console.log("[View.Web] calling constructor ");
 		if (config["model"]) this.model = config["model"];
 		if (config["debug"]) this.debug = config["debug"] || false;
 		this.setup();
@@ -431,7 +442,7 @@ View.Web = function (config) {
 		 */
 		registerController: function(control, name) {
 			this.controller = control;
-			this.submitFuncName = name || "submit";
+			// this.submitFuncName = name || "submit";
 		},
 
 		/**
@@ -444,24 +455,24 @@ View.Web = function (config) {
 				, $newEle
 				;
 
-			console.log("[Web:load] this.model.data ", this.model.data);
+			if (debug) console.log("[Web:load] this.model.data ", this.model.data);
 
 			for (var type in this.model.config.input) {
-				console.log("[Web:load] this model data ", type);
+				if (debug) console.log("[Web:load] this model data ", type);
 
 				for (var cur in this.model.config.input[type]) {
 					query_str += "::" + cur + " - ";
 					for (var ele in this.model.config.input[type][cur]) {
-						console.log("[Web:load] HERE ", this.model.data.input[type][cur]);
+						if (debug) console.log("[Web:load] HERE ", this.model.data.input[type][cur]);
 						if (this.model.data.input[type][cur].available && ele !== "available") {
 							query_str += " " + ele + ": " + this.model.data.input[type][cur][ele];
-							console.log("[Web:load] cur " + cur + " ele " + ele);
+							if (debug) console.log("[Web:load] cur " + cur + " ele " + ele);
 						} else {
 							query_str = "";
 						}
 					}
 				}			
-				console.log("[Web:load] query_str ",  query_str);
+				if (debug) console.log("[Web:load] query_str ",  query_str);
 				var $ele = $("#query_results ." + type ).text(query_str);
 				query_str = "";
 
@@ -475,10 +486,12 @@ View.Web = function (config) {
 					$newEle.attr( {id: element} );
 					for (var attr in this.model.data.output[content].list[element]) {
 						var cur_val = this.model.data.output[content].list[element][attr];
-						$newEle.find("." + attr).text(cur_val +  "  ::  ");
+						if (cur_val !== "not available") {
+							$newEle.find("." + attr).text(attr +  "  ::  " + cur_val);							
+						}
 					}
 					$newEle.appendTo('#content');
-					console.log("[Web:load] created a new list item", $newEle);
+					if (debug) console.log("[Web:load] created a new list item", $newEle);
 				}	
 			}
 		},
@@ -504,7 +517,7 @@ View.Web = function (config) {
 		 */
 		submit: function() {
 			var msg = {};
-			if (this.controller[this.submitFuncName]) {
+			if (this.controller["submit"] && this.controller["toggleState"]) {
 
 				// loop through each input to read each one				
 				for (var type in this.model.config.input) {
@@ -517,8 +530,10 @@ View.Web = function (config) {
 						}
 					}
 				}
-				console.log("[View.Web:submit] msg ", msg);
-				this.controller[this.submitFuncName]((msg));
+
+				if (debug) console.log("[View.Web:submit] msg ", msg);
+				this.controller.toggleState();
+				this.controller.submit(msg);
 			}
 		}
 	}
@@ -527,7 +542,7 @@ View.Web = function (config) {
  * View.Web constructor method. Sets up the event listeners for the input text box and button.
  */
 View.Spacebrew = function (config) {
-		if (this.debug) console.log("[View.Spacebrew] calling constructor ");
+		if (debug) console.log("[View.Spacebrew] calling constructor ");
 		if (config["model"]) this.model = config["model"];
 		if (config["debug"]) this.debug = config["debug"] || false;
 
@@ -539,11 +554,11 @@ View.Spacebrew = function (config) {
 
 		for (var i = 0; i < pubs.length; i += 1) {
 			this.sb.addPublish( pubs[i].name, pubs[i].type );		
-			console.log("[View.Spacebrew] adding pub " + pubs[i].name + " type " + pubs[i].type);
+			if (debug) console.log("[View.Spacebrew] adding pub " + pubs[i].name + " type " + pubs[i].type);
 		}
 		for (var i = 0; i < subs.length; i += 1) {
 			this.sb.addSubscribe( subs[i].name, subs[i].type );		
-			console.log("[View.Spacebrew] adding sub " + pubs[i].name + " type " + pubs[i].type);
+			if (debug) console.log("[View.Spacebrew] adding sub " + pubs[i].name + " type " + pubs[i].type);
 		}
 		this.sb.onStringMessage = this.onString.bind(this);
 		this.sb.onRangeMessage = this.onRange.bind(this);
@@ -579,11 +594,11 @@ View.Spacebrew = function (config) {
 		},
 
 		addCallback: function(eventName, cbName, cbContext ) {
-			console.log ("[ViewSpacebrew:addCallback] trying to add " + cbName + " to event " + eventName)
-			console.log ("[ViewSpacebrew:addCallback] type of cbName ", typeof cbContext[cbName])
+			if (debug) console.log ("[ViewSpacebrew:addCallback] trying to add " + cbName + " to event " + eventName)
+			if (debug) console.log ("[ViewSpacebrew:addCallback] type of cbName ", typeof cbContext[cbName])
 			if ((typeof cbContext[cbName]) === "function") {
 				this.callbacks[eventName] = cbContext[cbName].bind(cbContext);
-				console.log ("[ViewSpacebrew:addCallback] callback " + cbName + " added successufully to event " + eventName)
+				if (debug) console.log ("[ViewSpacebrew:addCallback] callback " + cbName + " added successufully to event " + eventName)
 			}
 			else {
 				return false; 
@@ -641,22 +656,22 @@ View.Spacebrew = function (config) {
 		},
 
 		load: function() {
-			console.log("[Spacebrew:load] load method called ");
+			if (debug) console.log("[Spacebrew:load] load method called ");
 			for (var content in this.model.data.output) {
-				console.log("[Spacebrew:load] this.model.data.output ", content);
+				if (debug) console.log("[Spacebrew:load] this.model.data.output ", content);
 				var content_list = this.model.data.output[content].list;
 				for (var i = content_list.length - 1; i >= 0; i--) {
-					console.log("[Spacebrew:load] this.model.data.output[content]", i);
-					console.log("[Spacebrew:load] this.model.data.output[content].id", content_list[i].id);
-					console.log("[Spacebrew:load] this.model.data.output[content].latest", this.model.data.output[content].latest);
+					if (debug) console.log("[Spacebrew:load] this.model.data.output[content]", i);
+					if (debug) console.log("[Spacebrew:load] this.model.data.output[content].id", content_list[i].id);
+					if (debug) console.log("[Spacebrew:load] this.model.data.output[content].latest", this.model.data.output[content].latest);
 
 					// if this is a content element that has not been sent yet, then send it
 					if (content_list[i].id > this.model.data.output[content].latest) {
-						console.log("[Spacebrew:load] id is higher than latest");
+						if (debug) console.log("[Spacebrew:load] id is higher than latest");
 
 						// callback method handles how content is sent to spacebrew
 						if (this.callbacks["load"]) {
-							console.log("[Spacebrew:load] this.callbacks['load']", this.callbacks["load"]);
+							if (debug) console.log("[Spacebrew:load] this.callbacks['load']", this.callbacks["load"]);
 							this.callbacks["load"](content_list[i], this.model.config.sb.pubs, this.sb);
 						}
 					}
