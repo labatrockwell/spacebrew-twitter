@@ -6,8 +6,8 @@
 
 module.exports = {
     tAuth : {
-        user : ADD_TEMBOO_USER_NAME,
-        app : ADD_TEMBOO_APP_NAME,
-        key : ADD_TEMBOO_APP_KEY
+        user : "ADD_TEMBOO_USER_NAME",
+        app : "ADD_TEMBOO_APP_NAME",
+        key : "ADD_TEMBOO_APP_KEY"
     }
 };

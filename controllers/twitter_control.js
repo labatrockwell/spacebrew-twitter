@@ -33,6 +33,10 @@ module.exports = {
                 "radius": 0,
                 "available": "false"
             }
+            "auth": {
+                "access_token": "",
+                "access_token_secret": ""
+            }
         } 
         return this.model.clients[clientId];
     },
@@ -119,7 +123,50 @@ module.exports = {
 
             // submit the query and client id to the query twitter app
             this.queryTemboo(queryJson.id, "reply");
+
+            // this.authTemboo(queryJson.id, "reply");
         }
+    },
+
+    authTemboo: function(clientId) {
+        // request a temboo choreo object to execute query
+        var self = this
+        	, Twitter = require("temboo/Library/Twitter/Search")
+			, initializeOAuthChoreo = new Twitter.InitializeOAuth(session)
+			, initializeOAuthInputs = initializeOAuthChoreo.newInputSet()
+			;
+
+		initializeOAuthInputs.setCredential('TwitterSpacebrewForwarder');
+
+		var intitializeOAuthCallback = function(results_start){
+		    	console.log("initial OAuth successful");
+			    var finalizeOAuthChoreo = new Twitter.FinalizeOAuth(session);
+				var finalizeOAuthInputs = finalizeOAuthChoreo.newInputSet();
+				finalizeOAuthInputs.setCredential('TwitterSpacebrewForwarder');
+				finalizeOAuthInputs.set_CallbackID(results_start.get_CallbackID);
+				finalizeOAuthInputs.set_OAuthTokenSecret(results_start.get_OAuthTokenSecret());
+
+				var finalizeOAuthCallback = function(results_finish){
+			    	console.log("finish OAuth successful");
+			    	this.model.clients[clientId].auth.access_token = results_finish.get_AccessToken();
+			    	this.model.clients[clientId].auth.access_token_secret = results_start.get_OAuthTokenSecret();
+			    }
+
+				// Run the choreo, specifying success and error callback handlers
+				finalizeOAuthChoreo.execute(
+				    finalizeOAuthInputs,
+				    finalizeOAuthCallback,
+				    function(error){console.log(error.type); console.log(error.message);}
+				);
+		    		
+		    }
+
+		initializeOAuthChoreo.execute(
+		    initializeOAuthInputs,
+		    intitializeOAuthCallback,
+		    function(error){console.log(error.type); console.log(error.message);}
+		);
+ 
     },
 
     /**
@@ -144,8 +191,24 @@ module.exports = {
 
         // request a temboo choreo object to execute query
         var Twitter = require("temboo/Library/Twitter/Search");
+
+/*
+		//////////////////////////////////////////////////////////
+		// NEW CODE FOR HANDLING TWITTER SEARCHES - USING OAUTH2.0
+        var queryChoreo = new Twitter.Tweets(self.session);
+        var queryInputs = queryChoreo.newInputSet();
+
+        queryInputs.setCredential('TwitterSpacebrewForwarderConsumerKeySecret');
+		queryInputs.set_AccessToken(this.model.clients[clientId].auth.access_token);
+		queryInputs.set_AccessTokenSecret(this.model.clients[clientId].auth.access_token_secret);
+        queryInputs.set_ResponseFormat("json");     // requesting response in json
+        queryInputs.set_Query(searchT);             // setting the search query    
+        queryInputs.set_SinceId(this.model.clients[clientId].lastId);
+        queryInputs.set_IncludeEntities(true);      // request add'l metadata
+ */
+
         var queryChoreo = new Twitter.Query(self.session);
-        
+
         // Instantiate and populate the input set for the choreo
         var queryInputs = queryChoreo.newInputSet();
         queryInputs.set_ResponseFormat("json");     // requesting response in json
