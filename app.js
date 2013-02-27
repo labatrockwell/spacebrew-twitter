@@ -12,8 +12,10 @@ var express = require('express')
     , handleRoot = rootApp.handleRoot.bind(rootApp)
 
     // twitter app handlers
-    , twitterApp = require('./controllers/twitter_control').init({"session": session})
+    , twitterAuth = require("./auth/auth_twitter").tAuth
+    , twitterApp = require('./controllers/twitter_control').init({"session": session, "auth": twitterAuth})
     , handleTwitterApp = twitterApp.handleAppRequest.bind(twitterApp)
+    , handleTwitterAuth = twitterApp.handleOAuthRequest.bind(twitterApp)
     , handleTwitterQuery = twitterApp.handleQueryRequest.bind(twitterApp)
 
     // twitter app handlers
@@ -24,7 +26,7 @@ var express = require('express')
     , handleFoursquareAuth = foursquareApp.handleAuthenticationReq.bind(foursquareApp)
     , handleFoursquareQuery = foursquareApp.handleQueryRequest.bind(foursquareApp)
 
-    , model = model || { httpPort: 3002 }
+    , model = model || { httpPort: 8002 }
 
     // create application
     , app = express()       
@@ -46,6 +48,7 @@ app.use(express.static(__dirname + '/public'))                                  
 // set application routes for twitter app
 app.get('/', handleRoot);
 app.get('/twitter', handleTwitterApp);
+app.get('/twitter/auth', handleTwitterAuth);
 app.get('/twitter/search', handleTwitterQuery);
 app.get('/twitter/query', handleTwitterQuery);
 

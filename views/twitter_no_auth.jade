@@ -1,0 +1,14 @@
+extend layout
+
+block query_bar
+	script(src='/js/twitter.js')
+
+	.required
+		h1.title  
+		input#logIn(type="button", name="submit query", value="Log-in to Twitter") 
+ 
+block query_results
+	.header
+		div.required You need to start by logging into your Twitter account.
+		div.optional Then you can start forwarding tweet queries to Spacebrew.
+	#content

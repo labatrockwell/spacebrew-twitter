@@ -54,7 +54,7 @@ var Model = {};
 			output: {}
 		},
 		controls: {
-			refresh: 30000
+			refresh: 60000
 		}
 	}
 

@@ -1,13 +1,19 @@
 module.exports = {
-    model: {},
+    model: {
+		"curClientId": 0,
+	    "auth" : {
+	    	"consumer_key" : "",
+	        "consumer_secret" : "",	    	
+	    },
+    	"clients" : {}
+    },
     session: {},
 
     init: function( config ) {
         this.session = config["session"];
-        this.model = {
-            "curClientId": 0,
-            "clients": {}
-        };
+        if (config["auth"]) {
+            this.model.auth = config["auth"];
+        }
         return this;
     },
 
@@ -32,10 +38,20 @@ module.exports = {
                 "long": 0,
                 "radius": 0,
                 "available": "false"
-            }
+            },
             "auth": {
+                "auth_token_secret": "",
+                "callback_id" : "" ,
                 "access_token": "",
-                "access_token_secret": ""
+                "access_token_secret": "",
+                "oath_started": false
+            }, 
+            "query_str": {
+            	"server": "sandbox.spacebrew.cc",
+            	"port": 9000,
+            	"name": "space tweets",
+            	"description": "forwards tweets to spacebrew",
+            	"refresh": undefined
             }
         } 
         return this.model.clients[clientId];
@@ -50,15 +66,106 @@ module.exports = {
      * @param  {Response Object} res Express server response object, used to respond to the HTTP request
      */
     handleAppRequest: function (req, res) {
-        var client = this.newClient();
+        var urlReq = require('url').parse(req.url, true)    // get the full URL request
+            , server = urlReq.query['server'] || undefined
+            , name = urlReq.query['name'] || undefined
+            , description = urlReq.query['description'] || undefined
+            , port = urlReq.query['port'] || undefined
+            , refresh = urlReq.query['refresh'] || undefined
+        	, client = this.newClient()
+        	;
 
-    	res.render('twitter',
-    		{ 
-                title : "Tweets in Space"			
+        // create the query string that will be appended to the redirect urls
+        if (server) client.query_str["server"] = server;       
+        if (port) client.query_str["port"] = port;        
+        if (name) client.query_str["name"] = name;
+        if (description) client.query_str["description"] = description;
+        if (refresh) client.query_str["refresh"] = refresh;
+        console.log("[authTemboo] created query string ", this.model.clients[client.id].auth.query_str)
+
+        res.render('twitter_no_auth',
+            { 
+                title : "Tweets in Space"           
                 , subTitle : "forwarding tweets to spacebrew"
-                , clientId: client.id
-    		}
-    	)
+                , clientId : client.id
+            }
+        )                                
+    },
+
+    handleOAuthRequest: function(req, res) {
+        var urlReq = require('url').parse(req.url, true)    // get the full URL request
+            , client_id = urlReq.query['client_id'] || -1
+            , client = this.model.clients[client_id]
+            , Twitter = require("temboo/Library/Twitter/OAuth")
+            , self = this
+            ; 
+
+        console.log("[authTemboo] received auth request ", urlReq)
+        console.log("[authTemboo] models client ", this.model.clients[client_id])
+
+        // create the query string that will be appended to the redirect urls
+        // if (client_id > 0) client = this.model.clients[client_id];
+        // else client = this.newClient();
+
+		if (!this.model.clients[client.id].auth.oath_started) {
+            console.log("[authTemboo] step 1 - client id ", client.id)
+
+			var initializeOAuthChoreo = new Twitter.InitializeOAuth(self.session)
+				, initializeOAuthInputs = initializeOAuthChoreo.newInputSet();
+
+			initializeOAuthInputs.setCredential('TwitterSpacebrewForwarder');
+			initializeOAuthInputs.set_ForwardingURL("http://localhost:8002/twitter/auth?client_id=" + client.id)
+
+			var intitializeOAuthCallback = function(results_start){
+			    	console.log("initial OAuth successful ", results_start.get_AuthorizationURL());
+			    	self.model.clients[client_id].auth.auth_token_secret = results_start.get_OAuthTokenSecret();
+			    	self.model.clients[client_id].auth.callback_id = results_start.get_CallbackID();
+			    	self.model.clients[client.id].auth.oath_started = true;
+			    	res.redirect(results_start.get_AuthorizationURL());		    		
+			    }
+
+			initializeOAuthChoreo.execute(
+			    initializeOAuthInputs,
+			    intitializeOAuthCallback,
+			    function(error){console.log("start OAuth", error.type); console.log(error.message);}
+			);
+		}
+
+		else {
+            console.log("[authTemboo] step 2 - client id ", client.id)
+
+		    var finalizeOAuthChoreo = new Twitter.FinalizeOAuth(self.session)
+				, finalizeOAuthInputs = finalizeOAuthChoreo.newInputSet();
+
+			finalizeOAuthInputs.setCredential('TwitterSpacebrewForwarder');
+			finalizeOAuthInputs.set_CallbackID(self.model.clients[client_id].auth.callback_id);
+			finalizeOAuthInputs.set_OAuthTokenSecret(self.model.clients[client_id].auth.auth_token_secret);
+
+			var finalizeOAuthCallback = function(results_finish){
+		    	console.log("finish OAuth successful");
+		    	self.model.clients[client_id].auth.access_token = results_finish.get_AccessToken();
+		    	self.model.clients[client_id].auth.access_token_secret = results_finish.get_AccessTokenSecret();
+
+	            client = self.model.clients[client_id];
+	            console.log("[finalizeOAuthCallback] athorized user - page loading - for client with id: ", client.id)
+	            res.render('twitter',
+	                { 
+	                    title : "Tweets in Space"           
+	                    , subTitle : "forwarding tweets to spacebrew"
+	                    , clientId : client.id
+	                    , query_str : client.query_str
+	                }
+	            )                                            
+		    }
+
+			// Run the choreo, specifying success and error callback handlers
+			finalizeOAuthChoreo.execute(
+			    finalizeOAuthInputs,
+			    finalizeOAuthCallback,
+			    function(error){console.log("final OAuth", error.type); console.log(error.message);}
+			);
+
+		} 
     },
 
     /**
@@ -123,50 +230,7 @@ module.exports = {
 
             // submit the query and client id to the query twitter app
             this.queryTemboo(queryJson.id, "reply");
-
-            // this.authTemboo(queryJson.id, "reply");
         }
-    },
-
-    authTemboo: function(clientId) {
-        // request a temboo choreo object to execute query
-        var self = this
-        	, Twitter = require("temboo/Library/Twitter/Search")
-			, initializeOAuthChoreo = new Twitter.InitializeOAuth(session)
-			, initializeOAuthInputs = initializeOAuthChoreo.newInputSet()
-			;
-
-		initializeOAuthInputs.setCredential('TwitterSpacebrewForwarder');
-
-		var intitializeOAuthCallback = function(results_start){
-		    	console.log("initial OAuth successful");
-			    var finalizeOAuthChoreo = new Twitter.FinalizeOAuth(session);
-				var finalizeOAuthInputs = finalizeOAuthChoreo.newInputSet();
-				finalizeOAuthInputs.setCredential('TwitterSpacebrewForwarder');
-				finalizeOAuthInputs.set_CallbackID(results_start.get_CallbackID);
-				finalizeOAuthInputs.set_OAuthTokenSecret(results_start.get_OAuthTokenSecret());
-
-				var finalizeOAuthCallback = function(results_finish){
-			    	console.log("finish OAuth successful");
-			    	this.model.clients[clientId].auth.access_token = results_finish.get_AccessToken();
-			    	this.model.clients[clientId].auth.access_token_secret = results_start.get_OAuthTokenSecret();
-			    }
-
-				// Run the choreo, specifying success and error callback handlers
-				finalizeOAuthChoreo.execute(
-				    finalizeOAuthInputs,
-				    finalizeOAuthCallback,
-				    function(error){console.log(error.type); console.log(error.message);}
-				);
-		    		
-		    }
-
-		initializeOAuthChoreo.execute(
-		    initializeOAuthInputs,
-		    intitializeOAuthCallback,
-		    function(error){console.log(error.type); console.log(error.message);}
-		);
- 
     },
 
     /**
@@ -181,41 +245,26 @@ module.exports = {
             , geocodeString = undefined
             , callbackName = callbackName || "reply"
             , self = this
+        	, Twitter = require("temboo/Library/Twitter/Search")
+			, queryChoreo = new Twitter.Tweets(self.session)
+			, queryInputs = queryChoreo.newInputSet()
             ;
 
         console.log("[queryTemboo] new request made: ", searchT);
-        console.log("[queryTemboo] geocode: ", geocodeT);
+        // console.log("[queryTemboo] geocode: ", geocodeT);
 
         // abort search if query (held in searchT) is not a valid string
         if (!this.isString(searchT)) return;    // return if search term not valid
 
         // request a temboo choreo object to execute query
-        var Twitter = require("temboo/Library/Twitter/Search");
-
-/*
-		//////////////////////////////////////////////////////////
-		// NEW CODE FOR HANDLING TWITTER SEARCHES - USING OAUTH2.0
-        var queryChoreo = new Twitter.Tweets(self.session);
-        var queryInputs = queryChoreo.newInputSet();
-
-        queryInputs.setCredential('TwitterSpacebrewForwarderConsumerKeySecret');
 		queryInputs.set_AccessToken(this.model.clients[clientId].auth.access_token);
 		queryInputs.set_AccessTokenSecret(this.model.clients[clientId].auth.access_token_secret);
-        queryInputs.set_ResponseFormat("json");     // requesting response in json
+		queryInputs.set_ConsumerSecret(this.model.auth.consumer_secret);
+		queryInputs.set_ConsumerKey(this.model.auth.consumer_key);
         queryInputs.set_Query(searchT);             // setting the search query    
         queryInputs.set_SinceId(this.model.clients[clientId].lastId);
         queryInputs.set_IncludeEntities(true);      // request add'l metadata
- */
-
-        var queryChoreo = new Twitter.Query(self.session);
-
-        // Instantiate and populate the input set for the choreo
-        var queryInputs = queryChoreo.newInputSet();
-        queryInputs.set_ResponseFormat("json");     // requesting response in json
-        queryInputs.set_Query(searchT);             // setting the search query    
-        queryInputs.set_SinceId(this.model.clients[clientId].lastId);
-        queryInputs.set_IncludeEntities(true);      // request add'l metadata
-
+ 
         // if geocode available, then process it and add it to query
         if (geocodeT.available) {
             geocodeString = "" + this.model.clients[clientId].geo.lat 
@@ -237,13 +286,14 @@ module.exports = {
                 newTweet = {},
                 vals = "";
 
-            // if the response includes a query and results then process it
-            if (tResults.query && tResults.results) {
-                console.log( "[successCallback:queryTemboo] query: " + tResults.query );
-                console.log( "[successCallback:queryTemboo] results : ", tResults.results );
+            // console.log( "[successCallback:queryTemboo] query results reply: ", tResults );
+
+            // if the response includes one or more tweets then process it
+            if (tResults.statuses.length > 0) {
+                // console.log( "[successCallback:queryTemboo] response data array: ", tResults.statuses );
 
                 // save results in the model
-                self.model.clients[clientId].results = tResults.results;
+                self.model.clients[clientId].results = tResults.statuses;
 
                 // loop through results to prepare data to send to front end
                 for(var i = self.model.clients[clientId].results.length - 1; i >= 0; i--) {
@@ -257,7 +307,6 @@ module.exports = {
                             , "photo": self.model.clients[clientId].results[i].profile_image_url
                             , "lat": "not available"
                             , "long": "not available"
-                            // , "hashtags": self.model.clients[clientId].results[i].entities.hashtags
                         };
 
                         if (self.model.clients[clientId].results[i]["geo"]) {

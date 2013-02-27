@@ -1,4 +1,5 @@
 var app = {}
+	, clientId = clientId || -1
 	, debug = false
 	, config = {
 		"sb": {
@@ -123,10 +124,29 @@ function onString(name, value) {
 }
 
 $(window).bind("load", function() {
-	app.model = new Model.Main(config);
-	app.web_view = new View.Web({"model": app.model});
-	app.sb_view = new View.Spacebrew({"model": app.model});
-	app.sb_view.addCallback("load", "sbLoadTweet", this);
-	app.sb_view.addCallback("onString", "onString", this);
-	app.control = new Control.Main([app.web_view, app.sb_view], app.model);
+
+	// check if the fsLogIn button exists, if so then register a click listener
+	var $logInButton = $("#logIn");
+
+	if ($logInButton.length > 0) {
+		if (debug) console.log("[onload:window] registering the logInButton")
+		$logInButton.on("click", function(event) {
+			var url = "/twitter/auth?client_id=" + clientId
+			if (getQueryString("server")) url += "&server=" + getQueryString("server");    
+			if (getQueryString("name")) url += "&name=" + getQueryString("name");    
+			if (getQueryString("description")) url += "&description=" + getQueryString("description");    
+			if (getQueryString("refresh")) url += "&refresh=" + getQueryString("refresh");    
+			$(location).attr('href', url);
+		})
+	} 
+
+	else {
+		app.model = new Model.Main(config);
+		app.web_view = new View.Web({"model": app.model});
+		app.sb_view = new View.Spacebrew({"model": app.model});
+		app.sb_view.addCallback("load", "sbLoadTweet", this);
+		app.sb_view.addCallback("onString", "onString", this);
+		app.control = new Control.Main([app.web_view, app.sb_view], app.model);
+	}
+
 });

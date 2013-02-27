@@ -111,6 +111,7 @@ $(window).bind("load", function() {
 
 	// check if the fsLogIn button exists, if so then register a click listener
 	var $logInButton = $("#fsLogIn");
+
 	if ($logInButton.length > 0) {
 		if (debug) console.log("[onload:window] registering the logInButton")
 		$logInButton.on("click", function(event) {
@@ -132,5 +133,4 @@ $(window).bind("load", function() {
 		app.sb_view.addCallback("load", "sbLoadCheckins", testSb);
 		app.control = new Control.Main([app.web_view, app.sb_view], app.model);		
 	}
-
 });
