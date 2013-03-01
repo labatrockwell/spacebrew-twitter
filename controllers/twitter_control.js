@@ -7,6 +7,7 @@ module.exports = {
 	    },
     	"clients" : {}
     },
+
     session: {},
 
     init: function( config ) {
@@ -97,57 +98,56 @@ module.exports = {
             , client_id = urlReq.query['client_id'] || -1
             , client = this.model.clients[client_id]
             , Twitter = require("temboo/Library/Twitter/OAuth")
+            , oauthChoreo = undefined
+            , oauthInputs = undefined
             , self = this
             ; 
 
         console.log("[authTemboo] received auth request ", urlReq)
         console.log("[authTemboo] models client ", this.model.clients[client_id])
 
-        // create the query string that will be appended to the redirect urls
-        // if (client_id > 0) client = this.model.clients[client_id];
-        // else client = this.newClient();
-
+        // handle first step of the OAuth authentication flow
 		if (!this.model.clients[client.id].auth.oath_started) {
             console.log("[authTemboo] step 1 - client id ", client.id)
 
-			var initializeOAuthChoreo = new Twitter.InitializeOAuth(self.session)
-				, initializeOAuthInputs = initializeOAuthChoreo.newInputSet();
+			oauthChoreo = new Twitter.InitializeOAuth(self.session);
 
-			initializeOAuthInputs.setCredential('TwitterSpacebrewForwarder');
-			initializeOAuthInputs.set_ForwardingURL("http://localhost:8002/twitter/auth?client_id=" + client.id)
+			oauthInputs = oauthChoreo.newInputSet();
+			oauthInputs.setCredential('TwitterSpacebrewForwarder');
+			oauthInputs.set_ForwardingURL("http://localhost:8002/twitter/auth?client_id=" + client.id)
 
-			var intitializeOAuthCallback = function(results_start){
-			    	console.log("initial OAuth successful ", results_start.get_AuthorizationURL());
-			    	self.model.clients[client_id].auth.auth_token_secret = results_start.get_OAuthTokenSecret();
-			    	self.model.clients[client_id].auth.callback_id = results_start.get_CallbackID();
+			var intitializeOAuthCallback = function(results){
+			    	console.log("[intitializeOAuthCallback:handleOAuthRequest] initial OAuth successful ", results.get_AuthorizationURL());
+			    	self.model.clients[client_id].auth.auth_token_secret = results.get_OAuthTokenSecret();
+			    	self.model.clients[client_id].auth.callback_id = results.get_CallbackID();
 			    	self.model.clients[client.id].auth.oath_started = true;
-			    	res.redirect(results_start.get_AuthorizationURL());		    		
+			    	res.redirect(results.get_AuthorizationURL());		    		
 			    }
 
-			initializeOAuthChoreo.execute(
-			    initializeOAuthInputs,
+			oauthChoreo.execute(
+			    oauthInputs,
 			    intitializeOAuthCallback,
 			    function(error){console.log("start OAuth", error.type); console.log(error.message);}
 			);
 		}
 
+        // handle second step of the OAuth authentication flow
 		else {
             console.log("[authTemboo] step 2 - client id ", client.id)
 
-		    var finalizeOAuthChoreo = new Twitter.FinalizeOAuth(self.session)
-				, finalizeOAuthInputs = finalizeOAuthChoreo.newInputSet();
+		    oauthChoreo = new Twitter.FinalizeOAuth(self.session)
 
-			finalizeOAuthInputs.setCredential('TwitterSpacebrewForwarder');
-			finalizeOAuthInputs.set_CallbackID(self.model.clients[client_id].auth.callback_id);
-			finalizeOAuthInputs.set_OAuthTokenSecret(self.model.clients[client_id].auth.auth_token_secret);
+			oauthInputs = oauthChoreo.newInputSet();
+			oauthInputs.setCredential('TwitterSpacebrewForwarder');
+			oauthInputs.set_CallbackID(self.model.clients[client_id].auth.callback_id);
+			oauthInputs.set_OAuthTokenSecret(self.model.clients[client_id].auth.auth_token_secret);
 
-			var finalizeOAuthCallback = function(results_finish){
-		    	console.log("finish OAuth successful");
-		    	self.model.clients[client_id].auth.access_token = results_finish.get_AccessToken();
-		    	self.model.clients[client_id].auth.access_token_secret = results_finish.get_AccessTokenSecret();
+			var finalizeOAuthCallback = function(results){
+		    	console.log("[finalizeOAuthCallback:handleOAuthRequest] finish OAuth successful");
+		    	self.model.clients[client_id].auth.access_token = results.get_AccessToken();
+		    	self.model.clients[client_id].auth.access_token_secret = results.get_AccessTokenSecret();
 
 	            client = self.model.clients[client_id];
-	            console.log("[finalizeOAuthCallback] athorized user - page loading - for client with id: ", client.id)
 	            res.render('twitter',
 	                { 
 	                    title : "Tweets in Space"           
@@ -159,8 +159,8 @@ module.exports = {
 		    }
 
 			// Run the choreo, specifying success and error callback handlers
-			finalizeOAuthChoreo.execute(
-			    finalizeOAuthInputs,
+			oauthChoreo.execute(
+			    oauthInputs,
 			    finalizeOAuthCallback,
 			    function(error){console.log("final OAuth", error.type); console.log(error.message);}
 			);

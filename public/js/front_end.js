@@ -546,7 +546,7 @@ View.Spacebrew = function (config) {
 		if (config["model"]) this.model = config["model"];
 		if (config["debug"]) this.debug = config["debug"] || false;
 
-		this.sb = new Spacebrew.Client(undefined, this.model.config.sb.name, this.model.config.sb.description);
+		this.sb = new Spacebrew.Client(this.model.config.sb.server, this.model.config.sb.name, this.model.config.sb.description, this.model.config.sb.port);
 		// console.log("[View.Spacebrew] spacebrew client at " +  + " name " + this.model.config.sb.name);
 
 		var pubs = this.model.config.sb.pubs, 

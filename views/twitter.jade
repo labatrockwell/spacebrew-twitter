@@ -1,11 +1,17 @@
 extend layout
 
+block header_script_pre
+	script
+		var clientId = !{clientId} 
+		var sbConfigs = !{JSON.stringify(query_str)}
+		console.log("Spacebrew Configs Received from Back-end ", sbConfigs)
+
 block header_script_post
-  script(src='/js/twitter.js')
+	script(src='/js/twitter.js')
 
 
 block query_results
-  .header
-    div.required Enter a search query to start forwarding tweets to Spacebrew.
-    div.optional You can also add a geocode filter to your queries.
-  #content
+	.header
+		div.required Enter a search query to start forwarding tweets to Spacebrew.
+		div.optional You can also add a geocode filter to your queries.
+	#content

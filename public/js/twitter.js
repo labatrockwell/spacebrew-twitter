@@ -1,11 +1,14 @@
 var app = {}
 	, clientId = clientId || -1
+	, sbConfigs = sbConfigs || {}
 	, debug = false
 	, config = {
 		"sb": {
-			"name": unescape(getQueryString("name")) ||  "space_tweets_front",
-			"description": unescape(getQueryString("description")) || "web app that forwards tweets to spacebrew",
-			"pubs": [
+			"server": this.sbConfigs.server || "sandbox.spacebrew.cc"
+			, "port": this.sbConfigs.port || 9000
+			, "name": this.sbConfigs.name || "space_tweets_front"
+			, "description": unescape(this.sbConfigs.description) || "web app that forwards tweets to spacebrew"
+			, "pubs": [
 			    { 
 			    	"name": 'tweets', 	
 			    	"type": 'string' 
