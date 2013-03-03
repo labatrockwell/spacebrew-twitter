@@ -68,7 +68,7 @@ You can configure the app using the following query string options:
 
 Here is an example URL with all of these query options defined:
 ```
-http://localhost:3009/twitter?server=sandbox.spacebrew.cc&refresh=10&name=tweets in space&description=app that forwards tweets
+http://localhost:8004/twitter?server=sandbox.spacebrew.cc&refresh=10&name=tweets in space&description=app that forwards tweets
 ```
   
 Latest Updates
