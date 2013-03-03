@@ -1,26 +1,31 @@
 !!!5
 html
-  head
-    title #{title} - My Site
-    link(rel='stylesheet', href='/stylesheets/style.css')
-    script
-      var clientId = !{clientId} 
-    block header_script_pre
-    script(src='/js/jq.1.8.3.js')
-    script(src='/js/sb.1.0.2.js')
-    script(src='/js/front_end.js')
-    block header_script_post
+	head
+		title #{title} - My Site
+		link(rel='stylesheet', href='/stylesheets/style.css')
 
-  body
-    header
-      h1 #{title}
-      h2 #{subTitle}
-    .container
-      #query_form
-        block query_bar
-      #query_results
-        block query_results
-    #templates hidden
-      block query_item
-    footer
-      p Created by LAB at Rockwell Group
+		script
+			var clientId = !{clientId} 
+			var queryStr = !{JSON.stringify(queryStr)}
+			var authConfirm = !{authConfirm}
+		block header_script_pre
+
+		script(src='/js/jq.1.8.3.js')
+		script(src='/js/sb.1.0.2.js')
+		script(src='/js/front_end.js')
+
+		block header_script_post
+
+	body
+		header
+			h1 #{title}
+			h2 #{subTitle}
+		.container
+			#query_form
+				block query_bar
+			#query_results
+				block query_results
+		#templates hidden
+			block query_item
+		footer
+			p Created by LAB at Rockwell Group

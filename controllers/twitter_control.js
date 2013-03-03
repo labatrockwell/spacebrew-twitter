@@ -19,10 +19,10 @@ module.exports = {
     },
 
     /**
-     * newClient Increments the curClientId and then add a new client to the this.model.clients object, assigning
-     *     to it the new client id.
-     * @param  {Object} config  Configuration object with an application name
-     * @return {this.model.Client}   Returns the client object that was just created
+     * newClient 	Increments the curClientId and then add a new client to the this.model.clients object, assigning
+     *     			to it the new client id.
+     * @param  {Object} config  	Configuration object with an application name
+     * @return {this.model.Client}  Returns the client object that was just created
      */
     newClient: function () {
         this.model.curClientId++;
@@ -59,36 +59,37 @@ module.exports = {
     },
 
     /**
-     * handleAppRequest Callback function that handles requests for the twitter app. These requests are parsed to
-     *     extract the app name from the URL. Once that is done, a new client object is created and then the appropriate 
-     *     page template is rendered. The client id, page title and subtitle are passed to the front-end page that is 
-     *     being rendered.   
-     * @param  {Request Object} req Express server request object, which includes information about the HTTP request
-     * @param  {Response Object} res Express server response object, used to respond to the HTTP request
+     * handleAppRequest 	Callback function that handles requests for the twitter app. These requests 
+     * 						are parsed to extract the app name from the URL. Once that is done, a new 
+     * 						client object is created and then the appropriate page template is rendered. 
+     * 						The client id, page title and subtitle are passed to the front-end page that is 
+     *       				being rendered.   
+     * @param  {Request Object} req 	Express server request object, which includes information about the 
+     *                          		HTTP request
+     * @param  {Response Object} res 	Express server response object, used to respond to the HTTP request
      */
     handleAppRequest: function (req, res) {
         var urlReq = require('url').parse(req.url, true)    // get the full URL request
-            , server = urlReq.query['server'] || undefined
-            , name = urlReq.query['name'] || undefined
-            , description = urlReq.query['description'] || undefined
-            , port = urlReq.query['port'] || undefined
-            , refresh = urlReq.query['refresh'] || undefined
         	, client = this.newClient()
         	;
 
         // create the query string that will be appended to the redirect urls
-        if (server) client.query_str["server"] = server;       
-        if (port) client.query_str["port"] = port;        
-        if (name) client.query_str["name"] = name;
-        if (description) client.query_str["description"] = description;
-        if (refresh) client.query_str["refresh"] = refresh;
-        console.log("[authTemboo] created query string ", this.model.clients[client.id].auth.query_str)
+        if (urlReq.query['server']) client.query_str["server"] = urlReq.query['server'];       
+        if (urlReq.query['port']) client.query_str["port"] = urlReq.query['port'];        
+        if (urlReq.query['name']) client.query_str["name"] = urlReq.query['name'];
+        if (urlReq.query['description']) client.query_str["description"] = urlReq.query['description'];
+        if (urlReq.query['refresh']) client.query_str["refresh"] = urlReq.query['refresh'];
+        if (urlReq.query['debug']) client.query_str["debug"] = urlReq.query['debug'];
+
+        console.log("[authTemboo] loaded query string settings ", this.model.clients[client.id].query_str)
 
         res.render('twitter_no_auth',
             { 
-                title : "Tweets in Space"           
-                , subTitle : "forwarding tweets to spacebrew"
-                , clientId : client.id
+                "title" : "Tweets in Space"           
+                , "subTitle" : "forwarding tweets to spacebrew"
+                , "clientId" : client.id
+                , "authConfirm" : false
+                , "queryStr" : client.query_str
             }
         )                                
     },
@@ -150,10 +151,11 @@ module.exports = {
 	            client = self.model.clients[client_id];
 	            res.render('twitter',
 	                { 
-	                    title : "Tweets in Space"           
-	                    , subTitle : "forwarding tweets to spacebrew"
-	                    , clientId : client.id
-	                    , query_str : client.query_str
+						"title" : "Tweets in Space"           
+						, "subTitle" : "forwarding tweets to spacebrew"
+						, "clientId" : client.id
+						, "authConfirm" : true
+						, "queryStr" : client.query_str
 	                }
 	            )                                            
 		    }
@@ -169,13 +171,16 @@ module.exports = {
     },
 
     /**
-     * handleQueryRequest Callback function that handles ajax requests for tweets. The query string in the URL for 
-     *     each request includes a client id and a twitter query term. These are used to make the appropriate request
-     *     to the twitter server, via Temboo. A reply callback method is added to the client object. This method is used
-     *     by the queryTemboo function to respond to the ajax request once it receives a response from the twitter server.
+     * handleQueryRequest 	Callback function that handles ajax requests for tweets. The query string 
+     * 						in the URL for each request includes a client id and a twitter query term. 
+     * 						These are used to make the appropriate request to the twitter server, via 
+     * 						Temboo. A reply callback method is added to the client object. This method 
+     * 						is used by the queryTemboo function to respond to the ajax request once it 
+     * 						receives a response from the twitter server.
      *        
-     * @param  {Request Object} req Express server request object, which includes information about the HTTP request
-     * @param  {Response Object} res Express server response object, used to respond to the HTTP request
+     * @param  {Request Object} req 	Express server request object, which includes information about 
+     *                          		the HTTP request
+     * @param  {Response Object} res 	Express server response object, used to respond to the HTTP request
      */
     handleQueryRequest: function (req, res) {
         var urlReq = require('url').parse(req.url, true)    // get the full URL request
@@ -234,10 +239,10 @@ module.exports = {
     },
 
     /**
-     * queryTemboo Function that submits twitter queries to via the Temboo API engine. 
-     * @param  {Integer} clientId     Id of the client that submitted this query
-     * @param  {String} callbackName Name of callback method that should be called when results data
-     *                               is received. If none is proved then it will default to reply.
+     * queryTemboo 	Submits twitter queries to via the Temboo API engine. 
+     * @param  {Integer} clientId     	Id of the client that submitted this query
+     * @param  {String} callbackName 	Name of callback method that should be called when results data
+     *                                	is received. If none is proved then it will default to reply.
      */
     queryTemboo: function (clientId, callbackName) {
         var searchT = this.model.clients[clientId].query
@@ -275,10 +280,10 @@ module.exports = {
         }
 
         /**
-         * successCallback Method that is called by the temboo API when the results from twitter are
-         *     returned. It process the data and calls the client's handler method to forward the
-         *     data back to the front end
-         * @param  {Temboo Results Obect} results Results from Temboo Twitter service query
+         * successCallback 	Method that is called by the temboo API when the results from 
+         * 					twitter are returned. It process the data and calls the client's 
+         * 					handler method to forward the data back to the front end
+         * @param {Temboo Results Obect} results 	Results from Temboo Twitter service query
          */
         var successCallback = function(results) {
             var tResults = JSON.parse(results.get_Response()),
@@ -290,7 +295,7 @@ module.exports = {
 
             // if the response includes one or more tweets then process it
             if (tResults.statuses.length > 0) {
-                // console.log( "[successCallback:queryTemboo] response data array: ", tResults.statuses );
+                console.log( "[successCallback:queryTemboo] response data array: ", tResults.statuses );
 
                 // save results in the model
                 self.model.clients[clientId].results = tResults.statuses;
@@ -300,11 +305,11 @@ module.exports = {
                     if (self.model.clients[clientId].results[i].id > self.model.clients[clientId].lastId) {
 
                         newTweet = {
-                            "user": self.model.clients[clientId].results[i].from_user
-                            , "text": self.model.clients[clientId].results[i].text
-                            , "created_at": self.model.clients[clientId].results[i].created_at
+                            "user": unescape(self.model.clients[clientId].results[i].user.name)
+                            , "text": unescape(self.model.clients[clientId].results[i].text)
+                            , "created_at": unescape(self.model.clients[clientId].results[i].created_at)
                             , "id": self.model.clients[clientId].results[i].id
-                            , "photo": self.model.clients[clientId].results[i].profile_image_url
+                            , "photo": self.model.clients[clientId].results[i].user.profile_image_url
                             , "lat": "not available"
                             , "long": "not available"
                         };
@@ -341,9 +346,9 @@ module.exports = {
     },
 
     /**
-     * isString Function that checks whether an object is a string
-     * @param  {Object}  obj Object that will be checked to confirm whether it is a string
-     * @return {Boolean}     Returns true if the object was a string. False otherwise.
+     * isString 	Check whether an object is a string
+     * @param  {Object}  obj 	Object that will be checked to confirm whether it is a string
+     * @return {Boolean}     	Returns true if the object was a string. False otherwise.
      */
     isString: function (obj) {
         return toString.call(obj) === '[object String]';

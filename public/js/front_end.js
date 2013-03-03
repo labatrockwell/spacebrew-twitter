@@ -1,5 +1,4 @@
-var clientId = clientId || -1
-	, debug = false;
+var debug = true;
 
 /**
  * Model Namespace for the model object that is configured for each webapp
@@ -8,16 +7,17 @@ var clientId = clientId || -1
 var Model = {};
 
 	/**
-	 * Model.Main Constructor for the app model. It initializes the model based on the config object that
-	 * 			  is passed in as an argument.
+	 * Model.Main 	Constructor for the app model. It initializes the model based on the config 
+	 * 				object that is passed in as an argument.
 	 * @param  {Object} config  Configuration object that is used to maintain the app's state.
 	 * @return {Model.Main}		Returns an instance of the app model.
 	 */
-	Model.Main = function (config) {
+	Model.Main = function (client_id, config) {
 		if (getQueryString("refresh")) {
 			this.controls.refresh = !isNaN(getQueryString("refresh")) ? (getQueryString("refresh") * 1000) : this.controls.refresh;
 		}
 		this.config = config;
+		this.client_id = client_id;
 
 		// set-up the input state variables
 		for (var type in this.config.input) {
@@ -25,7 +25,7 @@ var Model = {};
 			for (var group in this.config.input[type]) {
 				this.data.input[type][group] = {};	
 				for (var entry in this.config.input[type][group]) {
-						this.data.input[type][group][entry] = "";			
+					this.data.input[type][group][entry] = "";			
 				}
 				this.data.input[type][group].available = false;
 			}
@@ -47,13 +47,14 @@ var Model = {};
 	 * @type {Control.Main}
 	 */
 	Model.Main.prototype = {
-		constructor: Model.Main,
-		config: {},
-		data: {
-			input: {},
-			output: {}
-		},
-		controls: {
+		constructor: Model.Main
+		, client_id : -1
+		, config: {}
+		, data: {
+			input: {}
+			, output: {}
+		}
+		, controls: {
 			refresh: 60000
 		}
 	}
@@ -65,11 +66,11 @@ var Model = {};
 var Control = {};
 
 	/**
-	 * Control.Main constructor for the app controller. It initializes the view and model, registers the controller
-	 * 		with the view, so that it can handle appropriate callbacks .
-	 * @param  {View.Web} view  View object that controls the display of content and query submissions
-	 * @param  {Model} model Model object that holds the configuration settings, and live data
-	 * @return {Control.Main}	Returns an instance of the app controller.
+	 * Control.Main 	constructor for the app controller. It initializes the view and model, 
+	 * 					registers the controller with the view, so that it can handle appropriate callbacks .
+	 * @param  {View.Web} view  	View object that controls the display of content and query submissions
+	 * @param  {Model} model 		Model object that holds the configuration settings, and live data
+	 * @return {Control.Main}		Returns an instance of the app controller.
 	 */
 	Control.Main = function (view, model) {
 		var self = this;
@@ -96,10 +97,11 @@ var Control = {};
 	}
 
 	/**
-	 * Control.Main Prototype The controller prototype holds all functionality for the control objects. These objects
-	 * 		are responsible for handling data from the view and spacebrew, then it communicates with the node server 
-	 * 		to submit queries and process requests. Finally it forwards the appropriate data to the browser view 
-	 * 		and spacebrew.
+	 * Control.Main.Prototype 	The controller prototype holds all functionality for the control objects. 
+	 * 							These objects are responsible for handling data from the view and spacebrew, 
+	 * 							then it communicates with the node server to submit queries and process 
+	 * 							requests. Finally it forwards the appropriate data to the browser view 
+	 * 		     				and spacebrew.
 	 * @type {Control.Main}
 	 */
 	Control.Main.prototype = {
@@ -111,8 +113,7 @@ var Control = {};
 		forwarding: false,
 
 		/**
-		 * _query method that is called 
-		 * @return {[type]} [description]
+		 * _query 	method that is called 
 		 */
 		_query: function () {
 			// loop through the required data fields to make sure data has been provided
@@ -127,10 +128,10 @@ var Control = {};
 			if (debug) console.log("[Control:_query] attr_avail: " + attr_avail + " data_avail " + !data_avail );
 
 			// if client is not valid and data not provided for a required attribute then exit the function
-			if ((attr_avail && !data_avail) || (clientId == -1)) return;
+			if ((attr_avail && !data_avail) || (this.model.client_id == -1)) return;
 
 			// prepare query object and create self variable with link to current context
-			var query = { "id": clientId , "data": this.model.data.input } 
+			var query = { "id": this.model.client_id , "data": this.model.data.input } 
 				, self = this;
 			if (debug) console.log("[Control:_query] new query: ", query );
 
@@ -188,8 +189,8 @@ var Control = {};
 		},
 
 		/**
-		 * submit Method that is called to register new twitter queries.
-		 * @param  {String } query Twitter query string
+		 * submit 		Method that is called to register new twitter queries.
+		 * @param {String} query 	Twitter query string
 		 */
 		submit: function (query) {
 			// handle button press if forwarding is active by turning off forwarding
@@ -322,8 +323,8 @@ View.Web = function (config) {
 	}
 
 	/**
-	 * View.Web.prototype Class definition where all attributes and methods of the View.Web class are
-	 *        defined.
+	 * View.Web.prototype 	Class definition where all attributes and methods of the View.Web 
+	 * 						class are defined.
 	 * @type {Object}
 	 */
 	View.Web.prototype = {
@@ -336,8 +337,9 @@ View.Web = function (config) {
 		baseTextBox: "_textBox",
 
 		/**
-		 * setup Sets up the submit button and text box listeners for submitting twitter queries. Listeners are
-		 * 		set-up for submit button click, and carriage returns and new line keypress events.
+		 * setup 	Sets up the submit button and text box listeners for submitting twitter queries. 
+		 * 			Listeners are set-up for submit button click, and carriage returns and new line 
+		 * 			keypress events.
 		 */
 		setup: function() {
 			this.setupForm();
@@ -346,9 +348,9 @@ View.Web = function (config) {
 		},
 
 		/**
-		 * setupListeners Sets up the submit button and text box listeners for submitting twitter queries. 
-		 * 		Listeners are set-up for submit button click, and carriage returns and new line keypress 
-		 * 		events.
+		 * setupListeners 	Sets up the submit button and text box listeners for submitting twitter 
+		 * 					queries. Listeners are set-up for submit button click, and carriage returns 
+		 * 					and new line keypress events.
 		 */
 		setupListeners: function() {
 			var self = this;
@@ -368,7 +370,7 @@ View.Web = function (config) {
 			});				
 		},
 		/**
-		 * setupForm Sets up the input form for whichever webservice is being rendered.
+		 * setupForm 	Sets up the input form for whichever webservice is being rendered.
 		 */
 		setupForm: function() {
 			var $typeDiv
@@ -408,8 +410,8 @@ View.Web = function (config) {
 		},
 
 		/**
-		 * setupDataTemplate Mehod that creates the html template to handle the data from this
-		 * 					 webservice. This template is cloned to display data.
+		 * setupDataTemplate 	Mehod that creates the html template to handle the data from this
+		 * 					 	webservice. This template is cloned to display data.
 		 */
 		setupDataTemplate: function() {
 			var $typeDiv
@@ -435,10 +437,12 @@ View.Web = function (config) {
 
 
 		/**
-		 * registerControler Method that is called by the app controller to register the method used to submit
-		 * 		new Twitter queries. If no method name is provided then it defaults to "submit".
-		 * @param  {Control Object} control Link to control object, that will handle new query submissions
-		 * @param  {String} name    Name of the method from the controller that should be called on query submissions
+		 * registerControler 	Method that is called by the app controller to register the method 
+		 * 						used to submit new Twitter queries. If no method name is provided 
+		 * 						then it defaults to "submit".
+		 * @param  {Control Object} control 	Link to control object, that will handle new query submissions
+		 * @param  {String} name    			Name of the method from the controller that should be called on 
+		 *                             			query submissions
 		 */
 		registerController: function(control, name) {
 			this.controller = control;
@@ -446,8 +450,8 @@ View.Web = function (config) {
 		},
 
 		/**
-		 * load Method that loads content to the browser window. It uses the tweet template to create
-		 * 		the appropriate html objects.
+		 * load 	Method that loads content to the browser window. It uses the tweet template to 
+		 * 			create the appropriate html objects.
 		 */
 		load: function() {
 
@@ -497,14 +501,14 @@ View.Web = function (config) {
 		},
 
 		/**
-		 * clear Method that clears the list of content elements from the browser.
+		 * clear 	Method that clears the list of content elements from the browser.
 		 */
 		clear: function() {
 			$("#content .tweet").remove();        
 		},
 
 		/**
-		 * clear Method that clears the list of content elements from the browser.
+		 * clear 	Method that clears the list of content elements from the browser.
 		 */
 		updateState: function(_on) {
 			if (_on) $("#query_form .qSubmit").val("stop forwarding");        
@@ -512,8 +516,8 @@ View.Web = function (config) {
 		},
 
 		/**
-		 * submit Method that handle query submissions. It calls the controller's callback method that was
-		 * 		registered in the registerController method.
+		 * submit 	Method that handle query submissions. It calls the controller's callback 
+		 * 			method that was registered in the registerController method.
 		 */
 		submit: function() {
 			var msg = {};
@@ -539,7 +543,10 @@ View.Web = function (config) {
 	}
 
 /**
- * View.Web constructor method. Sets up the event listeners for the input text box and button.
+ * View.Web 	constructor method that sets spacebrew connection, and register all callback
+ * 				methods, and configures the client.
+ * @param {Object} config 	Configuration object with information about all Spacebrew publish
+ *                         	and subscribe channels, client name, server host and port number.
  */
 View.Spacebrew = function (config) {
 		if (debug) console.log("[View.Spacebrew] calling constructor ");
@@ -569,8 +576,8 @@ View.Spacebrew = function (config) {
 	}
 
 	/**
-	 * View.Web.prototype Class definition where all attributes and methods of the View.Web class are
-	 *        defined.
+	 * View.Web.prototype 	Class definition where all attributes and methods of the View.Web 
+	 * 						class are defined.
 	 * @type {Object}
 	 */
 	View.Spacebrew.prototype = {
@@ -583,10 +590,12 @@ View.Spacebrew = function (config) {
 		callbacks: {},
 
 		/**
-		 * registerControler Method that is called by the app controller to register the method used to submit
-		 * 		new Twitter queries. If no method name is provided then it defaults to "submit".
-		 * @param  {Control Object} control Link to control object, that will handle new query submissions
-		 * @param  {String} name    Name of the method from the controller that should be called on query submissions
+		 * registerControler 	Method that is called by the app controller to register the method 
+		 * 						used to submit new Twitter queries. If no method name is provided then 
+		 * 						it defaults to "submit".
+		 * @param  {Control Object} control 	Link to control object, that will handle new query submissions
+		 * @param  {String} name    			Name of the method from the controller that should be called 
+		 *                             			on query submissions
 		 */
 		registerController: function(control, name) {
 			this.controller = control;
@@ -606,10 +615,10 @@ View.Spacebrew = function (config) {
 		},
 
 		/**
-		 * onString function that processes string messages received from spacebrew. It converts the string into a query that 
-		 * 		is used as a query filter for the webservice. 	
-		 * @param  {String} inlet Name of the subcription feed channel where the message was received
-		 * @param  {String} msg   The message itself
+		 * onString 	function that processes string messages received from spacebrew. It converts the 
+		 * 				string into a query that  is used as a query filter for the webservice. 	
+		 * @param  {String} inlet 	Name of the subcription feed channel where the message was received
+		 * @param  {String} msg   	The message itself
 		 */
 		onString: function (inlet, msg) {
 			if (debug) console.log("[onString] got string msg: " + msg);
@@ -634,7 +643,7 @@ View.Spacebrew = function (config) {
 		},
 
 		/**
-		 * onOpen callback method that handles the on open event for the Spacebrew connection.
+		 * onOpen	callback method that handles the on open event for the Spacebrew connection.
 		 */
 		onOpen: function () {
 			this.connected = true;
@@ -645,7 +654,7 @@ View.Spacebrew = function (config) {
 		},
 
 		/**
-		 * onClose callback method that handles the on close event for the Spacebrew Connection.  
+		 * onClose	callback method that handles the on close event for the Spacebrew Connection.  
 		 */
 		onClose: function () {
 			this.connected = false;

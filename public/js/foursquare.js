@@ -127,7 +127,7 @@ $(window).bind("load", function() {
 	// if the user has been logged in, no fsLogIn button exists, then start-up the app
 	else {
 		if (debug) console.log("[onload:window] user is logged in, start-up the application")
-		app.model = new Model.Main(config);
+		app.model = new Model.Main(clientId, config);
 		app.web_view = new View.Web({"model": app.model});
 		app.sb_view = new View.Spacebrew({"model": app.model});
 		app.sb_view.addCallback("load", "sbLoadCheckins", testSb);

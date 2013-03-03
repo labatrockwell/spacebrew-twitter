@@ -1,11 +1,5 @@
 extend layout
 
-block header_script_pre
-	script
-		var clientId = !{clientId} 
-		var sbConfigs = !{JSON.stringify(query_str)}
-		console.log("Spacebrew Configs Received from Back-end ", sbConfigs)
-
 block header_script_post
 	script(src='/js/twitter.js')
 
