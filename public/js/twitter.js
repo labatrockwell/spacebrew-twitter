@@ -83,7 +83,8 @@ function sbLoadTweet(curTweet, pubs, sb) {
 		, users_tweets_photos = JSON.stringify({"user": curTweet.name, "tweet": curTweet.text, "photo": curTweet.photo})
 		, kitchen_sink = JSON.stringify(curTweet)
 		, users_tweets_geo = undefined
-		, vals = {};
+		, vals = {}
+		;
 
 	if (curTweet.lat && curTweet.long) {
 		if (curTweet.lat != "not available" && curTweet.long != "not available") {
@@ -91,21 +92,21 @@ function sbLoadTweet(curTweet, pubs, sb) {
 		}			
 	}
 
-	// sets values for each publication feed
-	vals = {
-				"tweets": unescape(curTweet.text)
-				, "users_tweets": users_tweets
-				, "users_tweets_photos": users_tweets_photos
-				, "users_tweets_geo": users_tweets_geo
-				, "kitchen_sink": kitchen_sink
-				, "new_tweets": "true"
-			};	
+	// set the values for each publication feed
+	vals = [
+		unescape(curTweet.text)			// tweets
+		, users_tweets 					// users_tweets
+		, users_tweets_photos			// users_tweets_photos
+		, users_tweets_geo				// users_tweets_geo
+		, kitchen_sink					// kitchen_sink
+		, "true"						// new tweets
+	];				
 
 	for (var j in pubs) {							
 		if (debug) console.log("[sbLoadTweet] current pub: " + j + " name: " + pubs[j].name);
 		if (vals[pubs[j].name]) {
 			if (debug) console.log("[sbLoadTweet] sending value: " + vals[pubs[j].name]);
-			sb.send( pubs[j].name, pubs[j].type, vals[pubs[j].name] );		
+			sb.send( pubs[j].name, pubs[j].type, vals[j] );		
 		}
 	}				    	
 }	
@@ -148,5 +149,4 @@ $(window).bind("load", function() {
 		app.control = new Control.Main([app.web_view, app.sb_view], app.model);
 		if (debug) console.log("[onload:window] loaded model, controllers, and views")
 	}
-
 });

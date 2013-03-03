@@ -12,12 +12,13 @@ var Model = {};
 	 * @param  {Object} config  Configuration object that is used to maintain the app's state.
 	 * @return {Model.Main}		Returns an instance of the app model.
 	 */
-	Model.Main = function (client_id, config) {
+	Model.Main = function (client_id, config, debug) {
 		if (getQueryString("refresh")) {
 			this.controls.refresh = !isNaN(getQueryString("refresh")) ? (getQueryString("refresh") * 1000) : this.controls.refresh;
 		}
 		this.config = config;
 		this.client_id = client_id;
+		this.debug = debug || this.debug;
 
 		// set-up the input state variables
 		for (var type in this.config.input) {
@@ -38,7 +39,7 @@ var Model = {};
 			this.data.output[type].latest = 0;
 		}
 
-		if (debug) console.log("Model.Main - model has been created: ", this.data);
+		if (this.debug) console.log("Model.Main - model has been created: ", this.data);
 	}
 
 	/**
@@ -48,7 +49,7 @@ var Model = {};
 	 */
 	Model.Main.prototype = {
 		constructor: Model.Main
-		, client_id : -1
+		, client_id: -1
 		, config: {}
 		, data: {
 			input: {}
@@ -57,6 +58,7 @@ var Model = {};
 		, controls: {
 			refresh: 60000
 		}
+		, debug: false
 	}
 
 /**
@@ -93,7 +95,7 @@ var Control = {};
 		// set interval for making requests to twitter
 		this.interval = undefined;
 
-		if (debug) console.log("Control.Main set refresh to: ", this.model.controls.refresh);
+		if (this.model.debug) console.log("Control.Main set refresh to: ", this.model.controls.refresh);
 	}
 
 	/**
@@ -125,7 +127,7 @@ var Control = {};
 					attr_avail = true;
 				}
 			}
-			if (debug) console.log("[Control:_query] attr_avail: " + attr_avail + " data_avail " + !data_avail );
+			if (this.model.debug) console.log("[Control:_query] attr_avail: " + attr_avail + " data_avail " + !data_avail );
 
 			// if client is not valid and data not provided for a required attribute then exit the function
 			if ((attr_avail && !data_avail) || (this.model.client_id == -1)) return;
@@ -133,7 +135,7 @@ var Control = {};
 			// prepare query object and create self variable with link to current context
 			var query = { "id": this.model.client_id , "data": this.model.data.input } 
 				, self = this;
-			if (debug) console.log("[Control:_query] new query: ", query );
+			if (this.model.debug) console.log("[Control:_query] new query: ", query );
 
 			// make ajax request to the server for data from a webservice
 			$.ajax({
@@ -149,7 +151,7 @@ var Control = {};
 						, curTweet = {}
 						, vals = [];
 
-					if (debug) console.log("[Controller:_query:success] new data received ", jData.list);
+					if (this.model.debug) console.log("[Controller:_query:success] new data received ", jData.list);
 
 		    		// loop through the new content array to add each element to our model 
 				    for (var i = 0; i < jData.list.length; i++) {
@@ -168,7 +170,7 @@ var Control = {};
     	    		// load the content to the different views
     	    		for (var j = 0; j < self.views.length; j += 1) {
 					    if (self.views[j]["load"]) {
-						    if (debug) console.log("[Controller:_query:success] loading content to views ", j)	    			
+						    if (this.model.debug) console.log("[Controller:_query:success] loading content to views ", j)	    			
 					    	self.views[j]["load"]();
 					    }
     	    		}
@@ -176,14 +178,14 @@ var Control = {};
     	    		// update the id or time_created of the most recent data element				
 					for (var content in this.model.data.output) {
 	    	    		if (self.model.data.output[content].list.length > 0) {
-						    if (debug) console.log("[Controller:_query:success] update the latest id to ", self.model.data.output[content].list[0].id)	    			
+						    if (this.model.debug) console.log("[Controller:_query:success] update the latest id to ", self.model.data.output[content].list[0].id)	    			
 							self.model.data.output[content].latest = self.model.data.output[content].list[0].id;					
 	    	    		}
 	    	    	}
 			    },
 
 			    error: function(err) {
-			        if (debug) console.log(err);
+			        console.log(err);
 			    }
 			});
 		},
@@ -204,8 +206,8 @@ var Control = {};
 					, self = this
 					;
 
-				if (debug) console.log("[Control:submit] new query: ", query );
-				if (debug) console.log("[Control:submit] this.model.data.input: ", this.model.data.input );
+				if (this.model.debug) console.log("[Control:submit] new query: ", query );
+				if (this.model.debug) console.log("[Control:submit] this.model.data.input: ", this.model.data.input );
 
 				// loop through each input type (required and optional) and group 				
 				for (var type in this.model.config.input) {
@@ -223,7 +225,7 @@ var Control = {};
 
 										// if input string has an appropriate value then store it
 										if (match_results) {
-											if (debug) console.log("[Control:submit] matched " , match_results);
+											if (this.model.debug) console.log("[Control:submit] matched " , match_results);
 											this.model.data.input[type][group][attr] = query[type][group][attr];
 										// if input string does not have an appropriate value then set data_available to false
 										} else {
@@ -244,7 +246,7 @@ var Control = {};
 						}
 					}
 				}
-				if (debug) console.log("[Control:submit] data test: ", this.model.data );				
+				if (this.model.debug) console.log("[Control:submit] data test: ", this.model.data );				
 
 				// re-initialize the list and latest variables for each output
 				for (var ele in this.model.data.output) {
@@ -268,7 +270,7 @@ var Control = {};
 
 			// handle button press if forwarding is active by turning off forwarding
 			if (this.forwarding) {
-				if (debug) console.log("[Control:toggleState] stop forwarding ");
+				if (this.model.debug) console.log("[Control:toggleState] stop forwarding ");
 
 				// update the state in the appropriate views (such as the web view)
 	    		for (var i = 0; i < this.views.length; i += 1) {
@@ -282,12 +284,12 @@ var Control = {};
 
 			// handle button press if forwarding is NOT active by turning on forwarding
 			} else {
-				if (debug) console.log("[Control:toggleState] start forwarding - setting refresh interval to: ", this.model.controls.refresh );
+				if (this.model.debug) console.log("[Control:toggleState] start forwarding - setting refresh interval to: ", this.model.controls.refresh );
 
 	    		// re-setting the forwarding interval
 	    		if (this.interval) { clearInterval(this.interval); }
 				this.interval = setInterval(function() {
-					if (debug) console.log("[Control:submit] requesting new data ");
+					if (this.model.debug) console.log("[Control:submit] requesting new data ");
 					self._query();
 				}, this.model.controls.refresh);
 			}					
@@ -300,13 +302,15 @@ var Control = {};
 
 
 /**
- * View namespace for the view elements of the webservices app. Here is an overview of the view
- * 		API methods:
- * 		* registerController (all views)
- * 		* submit (all views)
- * 		* load (all view)
- * 		* clear (web view only)
- * 		* updateState (web view only)
+ * View Namespace	namespace for the view elements of the webservices app. Here is an overview of the view
+ * 					API methods:
+ *    	 				* registerController (web and spacebrew views)
+ *          			* addCallback (spacebrew view only)
+ * 					       * Can be added to "onString", "onRange", "onBoolean", "onCustom"
+ *                 		* submit (web and spacebrew views)
+ *                   	* load (web and spacebrew views)
+ *                    	* clear (web view only)
+ * 	         	        * updateState (web view only)
  * @type {Object}
  */
 var View = {};
@@ -315,7 +319,7 @@ var View = {};
  * View.Web constructor method. Sets up the event listeners for the input text box and button.
  */
 View.Web = function (config) {
-		if (debug) console.log("[View.Web] calling constructor ");
+		if (this.model.debug) console.log("[View.Web] calling constructor ");
 		if (config["model"]) this.model = config["model"];
 		if (config["debug"]) this.debug = config["debug"] || false;
 		this.setup();
@@ -459,24 +463,24 @@ View.Web = function (config) {
 				, $newEle
 				;
 
-			if (debug) console.log("[Web:load] this.model.data ", this.model.data);
+			if (this.model.debug) console.log("[Web:load] this.model.data ", this.model.data);
 
 			for (var type in this.model.config.input) {
-				if (debug) console.log("[Web:load] this model data ", type);
+				if (this.model.debug) console.log("[Web:load] this model data ", type);
 
 				for (var cur in this.model.config.input[type]) {
 					query_str += "::" + cur + " - ";
 					for (var ele in this.model.config.input[type][cur]) {
-						if (debug) console.log("[Web:load] HERE ", this.model.data.input[type][cur]);
+						if (this.model.debug) console.log("[Web:load] HERE ", this.model.data.input[type][cur]);
 						if (this.model.data.input[type][cur].available && ele !== "available") {
 							query_str += " " + ele + ": " + this.model.data.input[type][cur][ele];
-							if (debug) console.log("[Web:load] cur " + cur + " ele " + ele);
+							if (this.model.debug) console.log("[Web:load] cur " + cur + " ele " + ele);
 						} else {
 							query_str = "";
 						}
 					}
 				}			
-				if (debug) console.log("[Web:load] query_str ",  query_str);
+				if (this.model.debug) console.log("[Web:load] query_str ",  query_str);
 				var $ele = $("#query_results ." + type ).text(query_str);
 				query_str = "";
 
@@ -495,7 +499,7 @@ View.Web = function (config) {
 						}
 					}
 					$newEle.appendTo('#content');
-					if (debug) console.log("[Web:load] created a new list item", $newEle);
+					if (this.model.debug) console.log("[Web:load] created a new list item", $newEle);
 				}	
 			}
 		},
@@ -535,7 +539,7 @@ View.Web = function (config) {
 					}
 				}
 
-				if (debug) console.log("[View.Web:submit] msg ", msg);
+				if (this.model.debug) console.log("[View.Web:submit] msg ", msg);
 				this.controller.toggleState();
 				this.controller.submit(msg);
 			}
@@ -549,27 +553,29 @@ View.Web = function (config) {
  *                         	and subscribe channels, client name, server host and port number.
  */
 View.Spacebrew = function (config) {
-		if (debug) console.log("[View.Spacebrew] calling constructor ");
 		if (config["model"]) this.model = config["model"];
 		if (config["debug"]) this.debug = config["debug"] || false;
+		if (this.model.debug) console.log("[View.Spacebrew] calling constructor ");
 
 		this.sb = new Spacebrew.Client(this.model.config.sb.server, this.model.config.sb.name, this.model.config.sb.description, this.model.config.sb.port);
-		// console.log("[View.Spacebrew] spacebrew client at " +  + " name " + this.model.config.sb.name);
 
 		var pubs = this.model.config.sb.pubs, 
 			subs = this.model.config.sb.subs;
 
 		for (var i = 0; i < pubs.length; i += 1) {
 			this.sb.addPublish( pubs[i].name, pubs[i].type );		
-			if (debug) console.log("[View.Spacebrew] adding pub " + pubs[i].name + " type " + pubs[i].type);
+			if (this.model.debug) console.log("[View.Spacebrew] adding pub " + pubs[i].name + " type " + pubs[i].type);
 		}
 		for (var i = 0; i < subs.length; i += 1) {
 			this.sb.addSubscribe( subs[i].name, subs[i].type );		
-			if (debug) console.log("[View.Spacebrew] adding sub " + pubs[i].name + " type " + pubs[i].type);
+			if (this.model.debug) console.log("[View.Spacebrew] adding sub " + pubs[i].name + " type " + pubs[i].type);
 		}
+
 		this.sb.onStringMessage = this.onString.bind(this);
 		this.sb.onRangeMessage = this.onRange.bind(this);
 		this.sb.onBooleanMessage = this.onBoolean.bind(this);
+		this.sb.onCustomMessage = this.onCustom.bind(this);
+
 		this.sb.onOpen = this.onOpen.bind(this);
 		this.sb.onClose = this.onClose.bind(this);
 		this.sb.connect();
@@ -583,9 +589,9 @@ View.Spacebrew = function (config) {
 	View.Spacebrew.prototype = {
 		constructor: View.Web,	// link to constructor
 		sb: {},
-		model: undefined,
+		model: {},
 		connected: false,		// flag that identifies if view has been initialized
-		controller: undefined,
+		controller: {},
 		submitFuncName: "",
 		callbacks: {},
 
@@ -603,11 +609,10 @@ View.Spacebrew = function (config) {
 		},
 
 		addCallback: function(eventName, cbName, cbContext ) {
-			if (debug) console.log ("[ViewSpacebrew:addCallback] trying to add " + cbName + " to event " + eventName)
-			if (debug) console.log ("[ViewSpacebrew:addCallback] type of cbName ", typeof cbContext[cbName])
+			if (this.model.debug) console.log ("[ViewSpacebrew:addCallback] trying to add " + cbName + " to event " + eventName)
 			if ((typeof cbContext[cbName]) === "function") {
 				this.callbacks[eventName] = cbContext[cbName].bind(cbContext);
-				if (debug) console.log ("[ViewSpacebrew:addCallback] callback " + cbName + " added successufully to event " + eventName)
+				if (this.model.debug) console.log ("[ViewSpacebrew:addCallback] callback " + cbName + " added successufully to event " + eventName)
 			}
 			else {
 				return false; 
@@ -621,7 +626,7 @@ View.Spacebrew = function (config) {
 		 * @param  {String} msg   	The message itself
 		 */
 		onString: function (inlet, msg) {
-			if (debug) console.log("[onString] got string msg: " + msg);
+			if (this.model.debug) console.log("[onString] got string msg: " + msg);
 			if (this.callbacks["onString"]) {
 				this.callbacks["onString"](inlet, msg);
 			}
@@ -629,16 +634,23 @@ View.Spacebrew = function (config) {
 
 
 		onRange: function (inlet, msg) {
-			if (debug) console.log("[onRange] got string msg: " + msg);
+			if (this.model.debug) console.log("[onRange] got string msg: " + msg);
 			if (this.callbacks["onRange"]) {
 				this.callbacks["onRange"](inlet, msg);
 			}
 		},
 
 		onBoolean: function (inlet, msg) {
-			if (debug) console.log("[onBoolean] got string msg: " + msg);
+			if (this.model.debug) console.log("[onBoolean] got string msg: " + msg);
 			if (this.callbacks["onBoolean"]) {
 				this.callbacks["onBoolean"](inlet, msg);
+			}
+		},
+
+		onCustom: function (inlet, msg) {
+			if (this.model.debug) console.log("[onCustom] got string msg: " + msg);
+			if (this.callbacks["onCustom"]) {
+				this.callbacks["onCustom"](inlet, msg, type);
 			}
 		},
 
@@ -647,7 +659,7 @@ View.Spacebrew = function (config) {
 		 */
 		onOpen: function () {
 			this.connected = true;
-			if (debug) console.log("[onOpen] spacebrew connection established");
+			if (this.model.debug) console.log("[onOpen] spacebrew connection established");
 			if (this.callbacks["onOpen"]) {
 				this.callbacks["onOpen"]();
 			}
@@ -658,29 +670,27 @@ View.Spacebrew = function (config) {
 		 */
 		onClose: function () {
 			this.connected = false;
-			if (debug) console.log("[onClose] spacebrew connection closed");
+			if (this.model.debug) console.log("[onClose] spacebrew connection closed");
 			if (this.callbacks["onClose"]) {
 				this.callbacks["onClose"]();
 			}
 		},
 
 		load: function() {
-			if (debug) console.log("[Spacebrew:load] load method called ");
+			if (this.model.debug) console.log("[Spacebrew:load] load method called ");
 			for (var content in this.model.data.output) {
-				if (debug) console.log("[Spacebrew:load] this.model.data.output ", content);
+				if (this.model.debug) console.log("[Spacebrew:load] this.model.data.output ", content);
 				var content_list = this.model.data.output[content].list;
 				for (var i = content_list.length - 1; i >= 0; i--) {
-					if (debug) console.log("[Spacebrew:load] this.model.data.output[content]", i);
-					if (debug) console.log("[Spacebrew:load] this.model.data.output[content].id", content_list[i].id);
-					if (debug) console.log("[Spacebrew:load] this.model.data.output[content].latest", this.model.data.output[content].latest);
+					if (this.model.debug) console.log("[Spacebrew:load] this.model.data.output[content].id", content_list[i].id);
 
 					// if this is a content element that has not been sent yet, then send it
 					if (content_list[i].id > this.model.data.output[content].latest) {
-						if (debug) console.log("[Spacebrew:load] id is higher than latest");
+						if (this.model.debug) console.log("[Spacebrew:load] id is higher than latest");
 
 						// callback method handles how content is sent to spacebrew
 						if (this.callbacks["load"]) {
-							if (debug) console.log("[Spacebrew:load] this.callbacks['load']", this.callbacks["load"]);
+							if (this.model.debug) console.log("[Spacebrew:load] this.callbacks['load']", this.callbacks["load"]);
 							this.callbacks["load"](content_list[i], this.model.config.sb.pubs, this.sb);
 						}
 					}

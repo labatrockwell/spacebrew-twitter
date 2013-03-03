@@ -1,60 +1,66 @@
 module.exports = {
-    model: {
-		"curClientId": 0,
-	    "auth" : {
-	    	"consumer_key" : "",
-	        "consumer_secret" : "",	    	
-	    },
-    	"clients" : {}
-    },
-
-    session: {},
-
-    init: function( config ) {
-        this.session = config["session"];
-        if (config["auth"]) {
-            this.model.auth = config["auth"];
-        }
-        return this;
+    session: {},                    // link to active temboo session
+    model: {                        // holds app configuration and current state information
+		"curClientId": 0
+		, "clients": {}
     },
 
     /**
-     * newClient 	Increments the curClientId and then add a new client to the this.model.clients object, assigning
-     *     			to it the new client id.
+     * init 	Method that initializes the controller object by getting a reference to the
+     * 			Temboo session object.
+     * @param  {Object} config  Configuration object that includes the auth settings 
+     *                          and the session object.
+     * @return {Object}         Twitter control object if config object was valid,
+     *                          otherwise it returns an empty object
+     */
+    init: function( config ) {
+        if (config["session"]) {
+	        this.session = config["session"];
+	        console.log("[init:Twitter] successfully configured twitter controller")
+	        return this;
+        } else {
+            console.log("[init:Twitter] unable to configure twitter controller")
+            return {};        
+        }
+    },
+
+    /**
+     * newClient 	Increments the curClientId and then add a new client to the this.model.clients object, 
+     * 				assigning to it the new client id.
      * @param  {Object} config  	Configuration object with an application name
      * @return {this.model.Client}  Returns the client object that was just created
      */
     newClient: function () {
-        this.model.curClientId++;
-        var clientId = this.model.curClientId;
-        this.model.clients[clientId] = {
-            "id": clientId,
-            "query": "",
-            "request": {},
-            "results": {},
-            "lastId": 0,
-            "reply": undefined,
-            "geo": {
-                "lat": 0,
-                "long": 0,
-                "radius": 0,
-                "available": "false"
-            },
-            "auth": {
-                "auth_token_secret": "",
-                "callback_id" : "" ,
-                "access_token": "",
-                "access_token_secret": "",
-                "oath_started": false
-            }, 
-            "query_str": {
-            	"server": "sandbox.spacebrew.cc",
-            	"port": 9000,
-            	"name": "space tweets",
-            	"description": "forwards tweets to spacebrew",
-            	"refresh": undefined
-            }
-        } 
+        this.model.curClientId++;               // update curClientId number
+        var clientId = this.model.curClientId;  // assign id number for current client
+        this.model.clients[clientId] = {        // initialize the current client object
+			"id": clientId
+			, "query": ""
+			, "request": {}
+			, "results": {}
+			, "lastId": 0
+			, "reply": undefined
+			, "geo": {
+				"lat": 0
+				, "long": 0
+				, "radius": 0
+				, "available": "false"
+			}
+			, "auth": {
+				"auth_token_secret": ""
+				, "callback_id" : ""
+				, "access_token": ""
+				, "access_token_secret": ""
+				, "oath_started": false
+			}
+			, "query_str": {
+				"server": "sandbox.spacebrew.cc"
+				, "port": 9000
+				, "name": "space tweets"
+				, "description": "forwards tweets to spacebrew"
+				, "refresh": undefined
+			}
+		}
         return this.model.clients[clientId];
     },
 
@@ -81,7 +87,7 @@ module.exports = {
         if (urlReq.query['refresh']) client.query_str["refresh"] = urlReq.query['refresh'];
         if (urlReq.query['debug']) client.query_str["debug"] = urlReq.query['debug'];
 
-        console.log("[authTemboo] loaded query string settings ", this.model.clients[client.id].query_str)
+        console.log("[handleAppRequest] loaded query string settings ", this.model.clients[client.id].query_str)
 
         res.render('twitter_no_auth',
             { 
@@ -94,6 +100,13 @@ module.exports = {
         )                                
     },
 
+    /**
+     * handleOAuthRequest 	Method that handles http requests associated to OAuth athentication for the
+     * 						Foursquare app. It leverages Temboo's OAuth API, in a consistent manner.
+     * @param  {Request Object} req 	Express server request object, which includes information about 
+     *                          		the HTTP request
+     * @param  {Response Object} res 	Express server response object, used to respond to the HTTP request
+     */
     handleOAuthRequest: function(req, res) {
         var urlReq = require('url').parse(req.url, true)    // get the full URL request
             , client_id = urlReq.query['client_id'] || -1
@@ -104,8 +117,7 @@ module.exports = {
             , self = this
             ; 
 
-        console.log("[authTemboo] received auth request ", urlReq)
-        console.log("[authTemboo] models client ", this.model.clients[client_id])
+        console.log("[handleOAuthRequest] current client's model: ", this.model.clients[client_id])
 
         // handle first step of the OAuth authentication flow
 		if (!this.model.clients[client.id].auth.oath_started) {
@@ -166,17 +178,16 @@ module.exports = {
 			    finalizeOAuthCallback,
 			    function(error){console.log("final OAuth", error.type); console.log(error.message);}
 			);
-
 		} 
     },
 
     /**
-     * handleQueryRequest 	Callback function that handles ajax requests for tweets. The query string 
-     * 						in the URL for each request includes a client id and a twitter query term. 
-     * 						These are used to make the appropriate request to the twitter server, via 
-     * 						Temboo. A reply callback method is added to the client object. This method 
-     * 						is used by the queryTemboo function to respond to the ajax request once it 
-     * 						receives a response from the twitter server.
+     * handleQueryRequest 		Callback function that handles ajax requests for tweets. The query string 
+     * 							in the URL for each request includes a client id and a twitter query term. 
+     * 					  		These are used to make the appropriate request to the twitter server, via 
+     * 				     		Temboo. A reply callback method is added to the client object. This method 
+     * 				       		is used by the queryTemboo function to respond to the ajax request once it 
+     * 		           			receives a response from the twitter server.
      *        
      * @param  {Request Object} req 	Express server request object, which includes information about 
      *                          		the HTTP request
@@ -184,58 +195,59 @@ module.exports = {
      */
     handleQueryRequest: function (req, res) {
         var urlReq = require('url').parse(req.url, true)    // get the full URL request
-            // , query = urlReq.search.replace(/\?/, "")       // get query string from URL request, remove the leading '?'
             , queryJson = JSON.parse(unescape(urlReq.search.replace(/\?/, "")))      // convert string to json (unescape to convert string format first)
             , client                                       // will hold client object
             ;
 
         console.log("[handleQueryRequest] json query ", queryJson)
 
-        // if the client id is not defined or the client does not exist, then create a new client
+        // if no client id is provided, or client id is invalid, then send user back to unauthorized page
         if (!queryJson.id || !this.model.clients[queryJson.id]) {
-            client = this.newClient();
-            queryJson.id = client.id;
+            res.redirect( "/twitter"); 
         } 
 
-        this.model.clients[queryJson.id].request = this.model.clients[queryJson.id];
+        // make sure that the required query attributes are included in request
+        if (queryJson.data.required) {
+			for (var attr in queryJson.data.required) {
+				if (!queryJson.data.required[attr].available) {
+					console.log("[handleQueryRequest] required attribute " + queryJson.data.required[attr] + " not available");
+					return;
+				}
+			}
+		}
 
-        // make sure that the incoming request includes a text query
-        if (queryJson.data.required.query.text) {
-            console.log("[handleQueryRequest] Valid query from id: " + queryJson.id + ", query : " + queryJson.data.required.query.text);        
-
-            // check if this query differs from the current one, if so then re-initialize the lastId, and query vars
-            if ((this.model.clients[queryJson.id].query !== queryJson.data.required.query.text)) {
-                console.log("[handleQueryRequest] Query is new");        
-                this.model.clients[queryJson.id].lastId = 0;
-                this.model.clients[queryJson.id].query = queryJson.data.required.query.text;
-            }
-
-            // if query includes geo filter, then process it
-            if (queryJson.data.optional.geo) {
-                // check if any of the geo filter attributes have changed then update the client object 
-                if ((queryJson.data.optional.geo.lat != this.model.clients[queryJson.id].geo.lat) || 
-                    (queryJson.data.optional.geo.long != this.model.clients[queryJson.id].geo.long) ||
-                    (queryJson.data.optional.geo.radius != this.model.clients[queryJson.id].geo.radius) ||
-                    (queryJson.data.optional.geo.available != this.model.clients[queryJson.id].geo.available)) 
-                {
-                    console.log("[handleQueryRequest] Geocode included : ", queryJson.data.optional.geo);        
-                    this.model.clients[queryJson.id].geo.lat = queryJson.data.optional.geo.lat;
-                    this.model.clients[queryJson.id].geo.long = queryJson.data.optional.geo.long;
-                    this.model.clients[queryJson.id].geo.radius = queryJson.data.optional.geo.radius;
-                    this.model.clients[queryJson.id].geo.available = queryJson.data.optional.geo.available;                
-                    this.model.clients[queryJson.id].lastId = 0;     // reset last ID to 0
-                }
-            }
-
-            // create the callback function to respond to request once data has been received from twitter
-            this.model.clients[queryJson.id].reply = function(data) {
-                console.log("[handleQueryRequest] callback method: ", data);
-                res.end(data);                
-            }
-
-            // submit the query and client id to the query twitter app
-            this.queryTemboo(queryJson.id, "reply");
+        // check if this query differs from the current one, if so then re-initialize the lastId, and query vars
+        if ((this.model.clients[queryJson.id].query !== queryJson.data.required.query.text)) {
+            console.log("[handleQueryRequest] Query is new");        
+            this.model.clients[queryJson.id].lastId = 0;
+            this.model.clients[queryJson.id].query = queryJson.data.required.query.text;
         }
+
+        // if query includes geo filter, then process it
+        if (queryJson.data.optional.geo) {
+            // check if any of the geo filter attributes have changed then update the client object 
+            if ((queryJson.data.optional.geo.lat != this.model.clients[queryJson.id].geo.lat) || 
+                (queryJson.data.optional.geo.long != this.model.clients[queryJson.id].geo.long) ||
+                (queryJson.data.optional.geo.radius != this.model.clients[queryJson.id].geo.radius) ||
+                (queryJson.data.optional.geo.available != this.model.clients[queryJson.id].geo.available)) 
+            {
+                console.log("[handleQueryRequest] Geocode included : ", queryJson.data.optional.geo);        
+                this.model.clients[queryJson.id].geo.lat = queryJson.data.optional.geo.lat;
+                this.model.clients[queryJson.id].geo.long = queryJson.data.optional.geo.long;
+                this.model.clients[queryJson.id].geo.radius = queryJson.data.optional.geo.radius;
+                this.model.clients[queryJson.id].geo.available = queryJson.data.optional.geo.available;                
+                this.model.clients[queryJson.id].lastId = 0;     // reset last ID to 0
+            }
+        }
+
+        // create the callback function to respond to request once data has been received from twitter
+        this.model.clients[queryJson.id].reply = function(data) {
+            console.log("[handleQueryRequest] callback method: ", data);
+            res.end(data);                
+        }
+
+        // submit the query and client id to the query twitter app
+        this.queryTemboo(queryJson.id, "reply");
     },
 
     /**
@@ -261,11 +273,12 @@ module.exports = {
         // abort search if query (held in searchT) is not a valid string
         if (!this.isString(searchT)) return;    // return if search term not valid
 
-        // request a temboo choreo object to execute query
+        // prepare the query by adding authentication elements
+		queryInputs.setCredential("TwitterSpacebrewForwarderConsumerKeySecret");
 		queryInputs.set_AccessToken(this.model.clients[clientId].auth.access_token);
 		queryInputs.set_AccessTokenSecret(this.model.clients[clientId].auth.access_token_secret);
-		queryInputs.set_ConsumerSecret(this.model.auth.consumer_secret);
-		queryInputs.set_ConsumerKey(this.model.auth.consumer_key);
+
+		// configure query with search term and other info
         queryInputs.set_Query(searchT);             // setting the search query    
         queryInputs.set_SinceId(this.model.clients[clientId].lastId);
         queryInputs.set_IncludeEntities(true);      // request add'l metadata
@@ -295,7 +308,7 @@ module.exports = {
 
             // if the response includes one or more tweets then process it
             if (tResults.statuses.length > 0) {
-                console.log( "[successCallback:queryTemboo] response data array: ", tResults.statuses );
+                // console.log( "[successCallback:queryTemboo] response data array: ", tResults.statuses );
 
                 // save results in the model
                 self.model.clients[clientId].results = tResults.statuses;

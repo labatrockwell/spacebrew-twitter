@@ -2,28 +2,25 @@
 var express = require('express')
     , stylus = require('stylus')
     , nib = require('nib')
-    , appList = ['twitter']
-    , tauth = require("./auth/auth_temboo").tAuth
+    , appList = ['twitter', 'foursquare']
+    , tembooAuth = require("./auth/auth_temboo").tAuth
     , tsession = require("temboo/core/temboosession")
-    , session = new tsession.TembooSession(tauth.user, tauth.app, tauth.key)
+    , session = new tsession.TembooSession(tembooAuth.user, tembooAuth.app, tembooAuth.key)
 
     // root app handlers
     , rootApp = require('./controllers/root').init(appList)
     , handleRoot = rootApp.handleRoot.bind(rootApp)
 
     // twitter app handlers
-    , twitterAuth = require("./auth/auth_twitter").tAuth
-    , twitterApp = require('./controllers/twitter_control').init({"session": session, "auth": twitterAuth})
+    , twitterApp = require('./controllers/twitter_control').init( {"session": session} )
     , handleTwitterApp = twitterApp.handleAppRequest.bind(twitterApp)
     , handleTwitterAuth = twitterApp.handleOAuthRequest.bind(twitterApp)
     , handleTwitterQuery = twitterApp.handleQueryRequest.bind(twitterApp)
 
     // twitter app handlers
-    , fsAuth = require("./auth/auth_foursquare").tAuth
-    , foursquareConfig = { "session": session, "auth": fsAuth }
-    , foursquareApp = require('./controllers/foursquare_control').init(foursquareConfig)
+    , foursquareApp = require('./controllers/foursquare_control').init( {"session": session} )
     , handleFoursquareApp = foursquareApp.handleAppRequest.bind(foursquareApp)
-    , handleFoursquareAuth = foursquareApp.handleAuthenticationReq.bind(foursquareApp)
+    , handleFoursquareAuth = foursquareApp.handleOAuthRequest.bind(foursquareApp)
     , handleFoursquareQuery = foursquareApp.handleQueryRequest.bind(foursquareApp)
 
     , model = model || { httpPort: 8002 }
@@ -47,15 +44,18 @@ app.use(express.static(__dirname + '/public'))                                  
 
 // set application routes for twitter app
 app.get('/', handleRoot);
-app.get('/twitter', handleTwitterApp);
-app.get('/twitter/auth', handleTwitterAuth);
-app.get('/twitter/search', handleTwitterQuery);
-app.get('/twitter/query', handleTwitterQuery);
 
-app.get('/foursquare', handleFoursquareApp);
-app.get('/foursquare/auth', handleFoursquareAuth);
-app.get('/foursquare/search', handleFoursquareQuery);
-app.get('/foursquare/query', handleFoursquareQuery);
+	// twitter app routes
+	app.get('/twitter', handleTwitterApp);
+	app.get('/twitter/auth', handleTwitterAuth);
+	app.get('/twitter/search', handleTwitterQuery);
+	app.get('/twitter/query', handleTwitterQuery);
+
+	// twitter foursquare routes
+	app.get('/foursquare', handleFoursquareApp);
+	app.get('/foursquare/auth', handleFoursquareAuth);
+	app.get('/foursquare/search', handleFoursquareQuery);
+	app.get('/foursquare/query', handleFoursquareQuery);
 
 app.listen(model.httpPort)    
 

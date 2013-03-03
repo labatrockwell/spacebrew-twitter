@@ -1,11 +1,15 @@
 var app = {}
 	, clientId = clientId || -1
-	, debug = false
+	, queryStr = queryStr || {}
+	, authConfirm = authConfirm || false
+	, debug = this.queryStr.debug || true
 	, config = {
 		"sb": {
-			"name": unescape(getQueryString("name")) || "space_fs_check_ins",
-			"description": unescape(getQueryString("description")) || "web app that forwards foursquare check-ins to spacebrew",
-			"pubs": [
+			"server": this.queryStr.server || "sandbox.spacebrew.cc"
+			, "port": this.queryStr.port || 9000
+			, "name": this.queryStr.name || "space_fs_check_ins"
+			, "description": unescape(this.queryStr.description) || "web app that forwards foursquare check-ins to spacebrew"
+			, "pubs": [
 			    { 
 			    	"name": 'people' 	
 			    	, "type": 'string' 
@@ -30,22 +34,22 @@ var app = {}
 			    	"name": 'check_in_bang' 	
 			    	, "type": 'boolean' 
 			    }
-			],
-			"subs": [
 			]
-		},
-		"input": {
+			, "subs": [
+			]
+		}
+		, "input": {
 			"required": {
 				"my friends": {}
-			},
-			"optional": {
+			}
+			, "optional": {
 				"geo": {
 					"lat": "integer",
 					"long": "integer",
 				}									
 			}
-		},
-		"output": {
+		}
+		, "output": {
 			"check-ins": {
 				"address": "",
 				"checkinsCount": "",
@@ -60,9 +64,8 @@ var app = {}
 				"user": "",
 				"venue": ""
 			}
-		},
-
-		"query_path" : "/foursquare/search"
+		}
+		, "query_path" : "/foursquare/search"
 	};
 
 
@@ -82,18 +85,19 @@ function sbFunctions () {
 	 */
 	this.sbLoadCheckins = function(content, pubs, sb) {
 		if (debug) console.log("[sbLoadCheckins:sbFunctions] called ");
-		var user_venue = { "user": content.user, "venue": content.venue}
-		var user_coords = { "user": content.user, "lat": content.lat, "long": content.long}
-		var user_photo = { "user": content.user, "photo": content.photo}
+		var people_and_venues = JSON.stringify({"user": content.user, "venue": content.venue})
+			, people_and_coords = JSON.stringify({"user": content.user, "lat": content.lat, "long": content.long})
+			, people_and_photos = JSON.stringify({"user": content.user, "photo": content.photo})
+			;
 
 		// set the values for each publication feed
 		vals = [
-			content.user 
-			, JSON.stringify(user_venue)
-			, JSON.stringify(user_coords)
-			, JSON.stringify(user_photo)
-			, content.photo
-			, "true"
+			content.user 			// people
+			, people_and_venues		// people_and_venues
+			, people_and_coords		// people_and_coords
+			, people_and_photos		// people_and_photos
+			, content.photo 		// photos
+			, "true"				// check-in_bang
 		];	
 
 		// loop through pubs array to send the appropriate spacebrew message via each outlet 
@@ -107,30 +111,20 @@ function sbFunctions () {
 var testSb = new sbFunctions();
 
 $(window).bind("load", function() {
-	if (debug) console.log("[onload:window] page loaded for client id " + clientId)
 
-	// check if the fsLogIn button exists, if so then register a click listener
-	var $logInButton = $("#fsLogIn");
-
-	if ($logInButton.length > 0) {
-		if (debug) console.log("[onload:window] registering the logInButton")
-		$logInButton.on("click", function(event) {
-			var url = "/foursquare/auth?client_id=" + clientId
-			if (getQueryString("server")) url += "&server=" + getQueryString("server");    
-			if (getQueryString("name")) url += "&name=" + getQueryString("name");    
-			if (getQueryString("description")) url += "&description=" + getQueryString("description");    
-			if (getQueryString("refresh")) url += "&refresh=" + getQueryString("refresh");    
-			$(location).attr('href',url);
-		})
+	if (!authConfirm) {
+		$("#logIn").on("click", function(event) {
+			$(location).attr('href', ("/foursquare/auth?client_id=" + clientId));
+		});
+		if (debug) console.log("[onload:window] registered logIn button")
 	} 
 
-	// if the user has been logged in, no fsLogIn button exists, then start-up the app
 	else {
-		if (debug) console.log("[onload:window] user is logged in, start-up the application")
 		app.model = new Model.Main(clientId, config);
 		app.web_view = new View.Web({"model": app.model});
 		app.sb_view = new View.Spacebrew({"model": app.model});
 		app.sb_view.addCallback("load", "sbLoadCheckins", testSb);
 		app.control = new Control.Main([app.web_view, app.sb_view], app.model);		
+		if (debug) console.log("[onload:window] user is logged in, start-up the application")
 	}
 });
