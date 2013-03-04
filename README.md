@@ -39,24 +39,9 @@ module.exports = {
 ```
 
 ###3. Set-up the Appropriate Webservice Auth Files
-You only need to create these files for the webservices that required Oauth 2.0 authorization. Currently, only the foursquare app requires this type of authorization. In order to create this file you will need to set-up an application in the API console from the appropriate webservice.
+Please note that we have migrate this app to use temboo to handle the OAuth2.0 authentication for twitter and foursquare (that's right the new twitter api requires authentication even for search).  
 
-Below is a description of the authorization file that you will need to set-up for the foursquare app. Make sure to save this file in the `auth` folder with the name `auth_foursquare.js`.
-```
-module.exports = {
-    tAuth : {
-    	"request_code_url" : REQUEST_CODE_URL,		// string - endpoint where we will send the "code" request
-		"client_id" : CLIENT_ID,					// string - client id from foursquare
-		"response_type" : RESPONSE_TYPE,			// string - should be set to "code"
-		"request_token_url" : REQUEST_TOKEN_URL,	// string - endpoint where we will send the "access_token" request
-		"grant_type" : GRANT_TYPE,					// string - should be set to "authorization_code"
-		"client_secret" : CLIENT_SECRET,			// string - available once you set-up the app on foursquare
-		"redirect_url" : REDIRECT_URL,				// string - URL that foursquare redirects users to during auth 
-													// 			process. This needs to be the same redirect URL that  
-													//			is registered with your foursquare app.
-    }
-};
-```
+This means that in order to set-up a local version of this app you will need to configure the appropriate credentials in you temboo account. We'll post more information about how to do this soon. In the meantime you should just read temboo's documentation and look at the code in the twitter and foursquare controller files, which are saved in the controllers directory.
 
 ###4. Run App
 Now you are ready to run the app. Go to app's base directory in the terminal, or other shell, and enter the launch command below with the appropriate arguments.
@@ -65,10 +50,10 @@ Now you are ready to run the app. Go to app's base directory in the terminal, or
 node app.js
 ```
   
-When launching the node app you can specify the port number where the front-end web app will be served. To set the port number append the following parameter to the app launch command  `port=PORT_NUM`. Below is an example of an app launch command where the port number is set to 3009. By default the port is set to 3002.
+When launching the node app you can specify the port number where the front-end web app will be served. To set the port number append the following parameter to the app launch command  `port=PORT_NUM`. Below is an example of an app launch command where the port number is set to 3009. By default the port is set to 8002.
     
 ```
-node app.js port=3009 
+node app.js port=8004 
 ```  
     
 ###5. Play Time
@@ -83,10 +68,12 @@ You can configure the app using the following query string options:
 
 Here is an example URL with all of these query options defined:
 ```
-http://localhost:3009/twitter?server=sandbox.spacebrew.cc&refresh=10&name=tweets in space&description=app that forwards tweets
+http://localhost:8004/twitter?server=sandbox.spacebrew.cc&refresh=10&name=tweets in space&description=app that forwards tweets
 ```
   
 Latest Updates
 ---------------------
-* foursquare forwarder is now fully functional
-* forwarding can be started and stopped on both twitter and foursquare forwarders
+* twitter app works with new api the requires authentication
+* foursquare app has been migrated to use temboo for OAuth authentication
+* buttons enable you to turn forwarding on and off
+* tweet querie can be submitted via spacebrew (though forwarding needs to be activated) 
