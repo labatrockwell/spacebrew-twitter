@@ -104,7 +104,7 @@ function sbLoadTweet(curTweet, pubs, sb) {
 
 	for (var j in pubs) {							
 		if (debug) console.log("[sbLoadTweet] current pub: " + j + " name: " + pubs[j].name);
-		if (vals[pubs[j].name]) {
+		if (vals[j]) {
 			if (debug) console.log("[sbLoadTweet] sending value: " + vals[pubs[j].name]);
 			sb.send( pubs[j].name, pubs[j].type, vals[j] );		
 		}
