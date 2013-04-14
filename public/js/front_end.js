@@ -19,6 +19,7 @@ var Model = {};
 		this.config = config;
 		this.client_id = client_id;
 		this.debug = debug || this.debug;
+		this.type = config.type;
 
 		// set-up the input state variables
 		for (var type in this.config.input) {
@@ -50,6 +51,7 @@ var Model = {};
 	Model.Main.prototype = {
 		constructor: Model.Main
 		, client_id: -1
+		, type: undefined
 		, config: {}
 		, data: {
 			input: {}
@@ -135,6 +137,7 @@ var Control = {};
 			// prepare query object and create self variable with link to current context
 			var query = { "id": this.model.client_id , "data": this.model.data.input } 
 				, self = this;
+
 			if (this.model.debug) console.log("[Control:_query] new query: ", query );
 
 			// make ajax request to the server for data from a webservice
@@ -151,7 +154,8 @@ var Control = {};
 						, curTweet = {}
 						, vals = [];
 
-					if (this.model.debug) console.log("[Controller:_query:success] new data received ", jData.list);
+					if (true) console.log("[Controller:_query:success] new data received ", jData.list);
+					// if (this.model.debug) console.log("[Controller:_query:success] new data received ", jData.list);
 
 		    		// loop through the new content array to add each element to our model 
 				    for (var i = 0; i < jData.list.length; i++) {
@@ -191,12 +195,11 @@ var Control = {};
 		},
 
 		/**
-		 * submit 		Method that is called to register new twitter queries.
+		 * Method that is called to register new twitter queries.
 		 * @param {String} query 	Twitter query string
 		 */
 		submit: function (query) {
-			// handle button press if forwarding is active by turning off forwarding
-			if (this.forwarding) {
+			if ( ( this.model.type === "forward" && this.forwarding ) || this.model.type === "update") {
 				var regex_integer = /[0-9\.-]+/
 					, regex_string = /[\w-]+/
 					, match_results = undefined				
@@ -246,17 +249,21 @@ var Control = {};
 						}
 					}
 				}
+
 				if (this.model.debug) console.log("[Control:submit] data test: ", this.model.data );				
 
-				// re-initialize the list and latest variables for each output
-				for (var ele in this.model.data.output) {
-					this.model.data.output[ele].list = [];
-					this.model.data.output[ele].latest = 0;				
+				// if this is a forward app then re-initialize the list and the id of the latest
+				// 	content that was forwarded when a new search term is provided 
+				if (this.model.type === "forward") {
+					for (var ele in this.model.data.output) {
+						this.model.data.output[ele].list = [];
+						this.model.data.output[ele].latest = 0;				
+					}
 				}
 
 				// update the views as appropriate
 	    		for (var i = 0; i < this.views.length; i += 1) {
-				    if (this.views[i]["updateState"]) this.views[i].updateState(true);	    			
+				    // if (this.views[i]["updateState"]) this.views[i].updateState(true);	    			
 				    if (this.views[i]["clear"]) this.views[i].clear();	    			
 				    if (this.views[i]["load"]) this.views[i].load();	    			
 	    		}
@@ -268,38 +275,46 @@ var Control = {};
 		toggleState: function() {
 			var self = this; 
 
-			// handle button press if forwarding is active by turning off forwarding
-			if (this.forwarding) {
-				if (this.model.debug) console.log("[Control:toggleState] stop forwarding ");
+			if (this.model.type === "forward") {
+				// handle button press if forwarding is active by turning off forwarding
+				if (this.forwarding) {
+					if (this.model.debug) console.log("[Control:toggleState] stop forwarding ");
 
-				// update the state in the appropriate views (such as the web view)
-	    		for (var i = 0; i < this.views.length; i += 1) {
-				    if (this.views[i]["updateState"]) this.views[i].updateState(false);	    			
-	    		}
-	    		// turn off the interval, and set the interval variable to undefined
-	    		if (this.interval) {
-	    			clearInterval(this.interval);
-	    			this.interval = undefined;
-	    		}
+					// update the state in the appropriate views (such as the web view)
+					for (var i = 0; i < this.views.length; i += 1) {
+						if (this.views[i]["updateState"]) this.views[i].updateState(false);	    			
+					}
 
-			// handle button press if forwarding is NOT active by turning on forwarding
-			} else {
-				if (this.model.debug) console.log("[Control:toggleState] start forwarding - setting refresh interval to: ", this.model.controls.refresh );
+		    		// turn off the interval, and set the interval variable to undefined
+		    		if (this.interval) {
+		    			clearInterval(this.interval);
+		    			this.interval = undefined;
+		    		}
 
-	    		// re-setting the forwarding interval
-	    		if (this.interval) { clearInterval(this.interval); }
-				this.interval = setInterval(function() {
-					if (this.model.debug) console.log("[Control:submit] requesting new data ");
-					self._query();
-				}, this.model.controls.refresh);
-			}					
+				// handle button press if forwarding is NOT active by turning on forwarding
+				} 
 
-			// change the data forwarding state of the app
-    		this.forwarding = !this.forwarding;
+				else {
+					if (this.model.debug) console.log("[Control:toggleState] start forwarding - setting refresh interval to: ", this.model.controls.refresh );
+
+					// update the state in the appropriate views (such as the web view)
+					for (var i = 0; i < this.views.length; i += 1) {
+						if (this.views[i]["updateState"]) this.views[i].updateState(true);	    			
+					}
+
+		    		// re-setting the forwarding interval
+		    		if (this.interval) { clearInterval(this.interval); }
+					this.interval = setInterval(function() {
+						if (self.model.debug) console.log("[setInterval:function] requesting new data ");
+						self._query();
+					}, this.model.controls.refresh);
+				}					
+
+				// change the data forwarding state of the app
+	    		this.forwarding = !this.forwarding;
+			}
 		}
 	}
-
-
 
 /**
  * View Namespace	namespace for the view elements of the webservices app. Here is an overview of the view
@@ -407,7 +422,9 @@ View.Web = function (config) {
 					}							
 					
 					// add submit button to the button of each group
-					htmlSettings = { class: 'qSubmit', type: "button", value: "start forwarding" };
+					htmlSettings = { class: 'qSubmit', type: "button"};
+					if (this.model.type === "forward") htmlSettings["value"] =  "start forwarding";
+					else if (this.model.type === "update") htmlSettings["value"] =  "submit update";
 					$('<input>', htmlSettings).appendTo($groupDiv);
 				}
 			}			
@@ -420,6 +437,7 @@ View.Web = function (config) {
 		setupDataTemplate: function() {
 			var $typeDiv
 				, $groupDiv
+				, $img
 				, divSettings;
 
 			// create a template for the data as configured in object
@@ -434,7 +452,14 @@ View.Web = function (config) {
 
 					// create new span for each element 
 					divSettings = { class: attr + " content_element_attr"};
-					$groupDiv = $('<div/>', divSettings).appendTo($typeDiv);
+					$groupDiv = $('<div/>', divSettings);
+
+					if (this.model.config.output[type][attr] == "img") {
+						$img = $('<img/>', {class: attr })
+						$img.appendTo($groupDiv);
+					}
+
+					$groupDiv.appendTo($typeDiv);
 				}
 			}			
 		},
@@ -463,7 +488,8 @@ View.Web = function (config) {
 				, $newEle
 				;
 
-			if (this.model.debug) console.log("[Web:load] this.model.data ", this.model.data);
+			console.log("[Web:load] this.model.data ", this.model.data);
+			// if (this.model.debug) console.log("[Web:load] this.model.data ", this.model.data);
 
 			for (var type in this.model.config.input) {
 				if (this.model.debug) console.log("[Web:load] this model data ", type);
@@ -480,25 +506,33 @@ View.Web = function (config) {
 						}
 					}
 				}			
-				if (this.model.debug) console.log("[Web:load] query_str ",  query_str);
+				if (true) console.log("[Web:load] query_str ",  query_str);
+				// if (this.model.debug) console.log("[Web:load] query_str ",  query_str);
 				var $ele = $("#query_results ." + type ).text(query_str);
 				query_str = "";
-
 			}
 
-			for (var content in this.model.data.output) {
-				$("#content .content_elements").remove();        
+			for (var type in this.model.data.output) {
+				$("#content .content_elements").remove();     
 
-				for (var element in this.model.data.output[content].list) {
+				for (var element in this.model.data.output[type].list) {
 					$newEle = $("#templates .content_elements").clone();
 					$newEle.attr( {id: element} );
-					for (var attr in this.model.data.output[content].list[element]) {
-						var cur_val = this.model.data.output[content].list[element][attr];
+					for (var attr in this.model.data.output[type].list[element]) {
+						var cur_val = this.model.data.output[type].list[element][attr];
 						if (cur_val !== "not available") {
-							$newEle.find("." + attr).text(attr +  "  ::  " + cur_val);							
+							console.log("this.model.config ", this.model.config);
+							if (this.model.config.output[type][attr] == "img") {
+								$newEle.find("img." + attr).attr("src", cur_val);							
+							}
+							else {
+								$newEle.find("." + attr).text(attr +  "  ::  " + cur_val);							
+							}
 						}
+
 					}
 					$newEle.appendTo('#content');
+
 					if (this.model.debug) console.log("[Web:load] created a new list item", $newEle);
 				}	
 			}
@@ -525,8 +559,15 @@ View.Web = function (config) {
 		 */
 		submit: function() {
 			var msg = {};
-			if (this.controller["submit"] && this.controller["toggleState"]) {
 
+			// if this is a forwarding app, then toggle forwarding on and off
+			if (this.model.type === "forward" && this.controller["toggleState"]) {
+				if (this.model.debug) console.log("[View.Web:submit] calling toggle state ");
+				this.controller.toggleState();
+			}
+
+			// for update and forwarding apps submit the data
+			if (this.controller["submit"]) {
 				// loop through each input to read each one				
 				for (var type in this.model.config.input) {
 					msg[type] = {};
@@ -540,7 +581,6 @@ View.Web = function (config) {
 				}
 
 				if (this.model.debug) console.log("[View.Web:submit] msg ", msg);
-				this.controller.toggleState();
 				this.controller.submit(msg);
 			}
 		}

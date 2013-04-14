@@ -1,0 +1,14 @@
+extend layout
+
+block query_bar
+	script(src='/js/twitter_update.js')
+
+	.required
+		h1.title  
+		input#logIn(type="button", name="Tweet via Spacebrew", value="Log-in to Twitter") 
+ 
+block query_results
+	.header
+		div.required You need to start by logging into your Twitter account.
+		div.optional Then you can start tweeting via Spacebrew.
+	#content

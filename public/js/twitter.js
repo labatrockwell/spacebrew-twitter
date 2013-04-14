@@ -4,7 +4,8 @@ var app = {}
 	, authConfirm = authConfirm || false
 	, debug = this.queryStr.debug || true
 	, config = {
-		"sb": {
+		"type": "forward"
+		, "sb": {
 			"server": this.queryStr.server || "sandbox.spacebrew.cc"
 			, "port": this.queryStr.port || 9000
 			, "name": this.queryStr.name || "space_tweets_front"
@@ -60,10 +61,10 @@ var app = {}
 			"tweets": {
 				"user": ""
 				, "text": ""
-                , "lat": ""
-                , "long": ""
+				, "lat": ""
+				, "long": ""
 				, "created_at": ""
-                , "photo": ""
+				, "photo": "img"
 
 			}
 		}
@@ -83,7 +84,7 @@ function sbLoadTweet(curTweet, pubs, sb) {
 		, users_tweets_photos = JSON.stringify({"user": curTweet.name, "tweet": curTweet.text, "photo": curTweet.photo})
 		, kitchen_sink = JSON.stringify(curTweet)
 		, users_tweets_geo = undefined
-		, vals = {}
+		, vals = []
 		;
 
 	if (curTweet.lat && curTweet.long) {
@@ -103,9 +104,9 @@ function sbLoadTweet(curTweet, pubs, sb) {
 	];				
 
 	for (var j in pubs) {							
-		if (debug) console.log("[sbLoadTweet] current pub: " + j + " name: " + pubs[j].name);
 		if (vals[j]) {
-			if (debug) console.log("[sbLoadTweet] sending value: " + vals[pubs[j].name]);
+			if (debug) console.log("[sbLoadTweet] current pub: " + pubs[j].name +
+								   " sending value: " + vals[j]);
 			sb.send( pubs[j].name, pubs[j].type, vals[j] );		
 		}
 	}				    	

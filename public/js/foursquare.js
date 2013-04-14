@@ -4,7 +4,8 @@ var app = {}
 	, authConfirm = authConfirm || false
 	, debug = this.queryStr.debug || true
 	, config = {
-		"sb": {
+		"type": "forward"
+		, "sb": {
 			"server": this.queryStr.server || "sandbox.spacebrew.cc"
 			, "port": this.queryStr.port || 9000
 			, "name": this.queryStr.name || "space_fs_check_ins"
@@ -59,7 +60,7 @@ var app = {}
 				"id": "",
 				"lat": "",
 				"long": "",
-				"photo": "",
+				"photo": "img",
 				"state": "",
 				"user": "",
 				"venue": ""
@@ -88,6 +89,7 @@ function sbFunctions () {
 		var people_and_venues = JSON.stringify({"user": content.user, "venue": content.venue})
 			, people_and_coords = JSON.stringify({"user": content.user, "lat": content.lat, "long": content.long})
 			, people_and_photos = JSON.stringify({"user": content.user, "photo": content.photo})
+			, vals
 			;
 
 		// set the values for each publication feed

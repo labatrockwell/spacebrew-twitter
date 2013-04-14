@@ -1,33 +1,39 @@
 // declare all app variables
 var express = require('express')
-    , stylus = require('stylus')
-    , nib = require('nib')
-    , appList = ['twitter', 'foursquare']
-    , tembooAuth = require("./auth/auth_temboo").tAuth
-    , tsession = require("temboo/core/temboosession")
-    , session = new tsession.TembooSession(tembooAuth.user, tembooAuth.app, tembooAuth.key)
+	, stylus = require('stylus')
+	, nib = require('nib')
+	, appList = ['twitter', 'foursquare']
+	, tembooAuth = require("./auth/auth_temboo").tAuth
+	, tsession = require("temboo/core/temboosession")
+	, session = new tsession.TembooSession(tembooAuth.user, tembooAuth.app, tembooAuth.key)
 
-    // root app handlers
-    , rootApp = require('./controllers/root').init(appList)
-    , handleRoot = rootApp.handleRoot.bind(rootApp)
+	// root app handlers
+	, rootApp = require('./controllers/root').init(appList)
+	, handleRoot = rootApp.handleRoot.bind(rootApp)
 
-    // twitter app handlers
-    , twitterApp = require('./controllers/twitter_control').init( {"session": session} )
-    , handleTwitterApp = twitterApp.handleAppRequest.bind(twitterApp)
-    , handleTwitterAuth = twitterApp.handleOAuthRequest.bind(twitterApp)
-    , handleTwitterQuery = twitterApp.handleQueryRequest.bind(twitterApp)
+	// twitter app handlers
+	, twitterApp = require('./controllers/twitter_control').init( {"session": session} )
+	, handleTwitterApp = twitterApp.handleAppRequest.bind(twitterApp)
+	, handleTwitterAuth = twitterApp.handleOAuthRequest.bind(twitterApp)
+	, handleTwitterQuery = twitterApp.handleQueryRequest.bind(twitterApp)
 
-    // twitter app handlers
-    , foursquareApp = require('./controllers/foursquare_control').init( {"session": session} )
-    , handleFoursquareApp = foursquareApp.handleAppRequest.bind(foursquareApp)
-    , handleFoursquareAuth = foursquareApp.handleOAuthRequest.bind(foursquareApp)
-    , handleFoursquareQuery = foursquareApp.handleQueryRequest.bind(foursquareApp)
+	// twitter app handlers
+	, twitterUpdateApp = require('./controllers/twitter_update_control').init( {"session": session} )
+	, handleTwitterUpdateApp = twitterUpdateApp.handleAppRequest.bind(twitterUpdateApp)
+	, handleTwitterUpdateAuth = twitterUpdateApp.handleOAuthRequest.bind(twitterUpdateApp)
+	, handleTwitterUpdate = twitterUpdateApp.handleStatusUpdate.bind(twitterUpdateApp)
 
-    , model = model || { httpPort: 8002 }
+	// foursquare app handlers
+	, foursquareApp = require('./controllers/foursquare_control').init( {"session": session} )
+	, handleFoursquareApp = foursquareApp.handleAppRequest.bind(foursquareApp)
+	, handleFoursquareAuth = foursquareApp.handleOAuthRequest.bind(foursquareApp)
+	, handleFoursquareQuery = foursquareApp.handleQueryRequest.bind(foursquareApp)
 
-    // create application
-    , app = express()       
-    ;   // close 'var' statement
+	, model = model || { httpPort: 8002 }
+
+	// create application
+	, app = express()       
+	;   // close 'var' statement
 
 // process the arguments passed into app via launch command in terminal
 process.argv.forEach(readArgv); 
@@ -50,6 +56,11 @@ app.get('/', handleRoot);
 	app.get('/twitter/auth', handleTwitterAuth);
 	app.get('/twitter/search', handleTwitterQuery);
 	app.get('/twitter/query', handleTwitterQuery);
+
+	// twitter update app routes
+	app.get('/tweet', handleTwitterUpdateApp);
+	app.get('/tweet/auth', handleTwitterUpdateAuth);
+	app.get('/tweet/update', handleTwitterUpdate);
 
 	// twitter foursquare routes
 	app.get('/foursquare', handleFoursquareApp);

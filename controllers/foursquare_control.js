@@ -125,13 +125,14 @@ module.exports = {
 
 			oauthInputs = oauthChoreo.newInputSet();
 			oauthInputs.setCredential('FoursquareSpacebrewForwarder');
-			oauthInputs.set_ForwardingURL("http://sandbox.spacebrew.cc:8002/foursquare/auth?client_id=" + client.id)
+			oauthInputs.set_ForwardingURL("http://localhost:8002/foursquare/auth?client_id=" + client.id)
+			// oauthInputs.set_ForwardingURL("http://sandbox.spacebrew.cc:8002/foursquare/auth?client_id=" + client.id)
 
 			var intitializeOAuthCallback = function(results){
 			    	console.log("[intitializeOAuthCallback:handleOAuthRequest] initial OAuth successful ", results.get_AuthorizeURL());
 			    	self.model.clients[client_id].auth.callback_id = results.get_CallbackID();
 			    	self.model.clients[client.id].auth.oath_started = true;
-			    	res.redirect(results.get_AuthorizeURL());		    		
+			    	res.redirect(results.get_AuthorizeURL());		
 			    }
 
 			oauthChoreo.execute(
